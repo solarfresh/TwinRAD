@@ -4,6 +4,7 @@ import time
 from configs.logging_config import setup_logging
 from server.server import run_server
 from twinrad.agents.dummy_agent import DummyAgent
+from twinrad.agents.prompt_generator import PromptGenerator
 
 # --- Logger Configuration ---
 # Set up the logger using the centralized config function
@@ -30,10 +31,20 @@ def start_agents():
     logger.info("Starting agents...")
     # Create instances of agents and connect them to the server
     dummy_agent = DummyAgent()
+    prompt_generator = PromptGenerator()
 
     # Connect the dummy agent to the server
     logger.info("Connecting DummyAgent to the server...")
-    dummy_agent.connect()
+    dummy_thread = threading.Thread(target=dummy_agent.connect)
+    generator_thread = threading.Thread(target=prompt_generator.connect)
+
+    dummy_thread.daemon = True
+    generator_thread.daemon = True
+
+    # Start the threads for both agents
+    logger.info("Starting agent threads...")
+    dummy_thread.start()
+    generator_thread.start()
 
 if __name__ == '__main__':
     logger.info("--- Twinrad System Starting ---")
