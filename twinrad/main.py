@@ -1,75 +1,57 @@
-import os
-import autogen
-from agents.router_agent import RouterAgent
-from agents.faq_agent import FAQAgent
-from agents.product_agent import ProductAgent
-from agents.order_agent import OrderAgent
-from agents.handover_agent import HandoverAgent
-from tools.rag_tool import rag_tool
-from tools.order_db_tool import order_db_tool
-from tools.handover_tool import handover_tool
+import threading
+import time
 
-# --- Configuration ---
-# You can load this from a YAML file for production environments
-LLM_CONFIG = {
-    "model": "gpt-4", # Replace with your preferred model
-    "api_key": os.getenv("OPENAI_API_KEY"),
-}
+from configs.logging_config import setup_logging
+from server.server import run_server
+from twinrad.agents.dummy_agent import DummyAgent
 
-# --- Initialize Agents and Tools ---
-print("Initializing agents and tools...")
+# --- Logger Configuration ---
+# Set up the logger using the centralized config function
+logger = setup_logging(name='[Main]')
 
-# Initialize Router Agent (UserProxyAgent in AutoGen terms)
-router_agent = RouterAgent(
-    name="router_agent",
-    llm_config=LLM_CONFIG,
-    human_input_mode="ALWAYS", # Use "NEVER" for full automation
-    is_termination_msg=lambda x: "bye" in x.get("content").lower(),
-    function_map={
-        "rag_tool": rag_tool,
-        "order_db_tool": order_db_tool,
-        "handover_tool": handover_tool,
-    },
-)
+def start_server_thread():
+    """
+    Starts the Socket.IO server in a separate thread.
+    This allows the server to run concurrently with the main application logic.
+    """
+    logger.info("Starting Socket.IO server in a separate thread...")
+    # Create and start the server thread
+    server_thread = threading.Thread(target=run_server)
+    server_thread.daemon = True  # Make the thread a daemon so it exits when the main program exits
+    server_thread.start()
+    # Wait for the server to start
+    logger.info("Waiting for the server to start...")
+    time.sleep(1)
 
-# Initialize specialized agents
-faq_agent = FAQAgent(
-    name="FAQ_Agent",
-    llm_config=LLM_CONFIG,
-    system_message="You are a helpful assistant specialized in answering FAQ questions. Use the provided tools and information to answer the user's questions about brand, policies, and product warranty. Be concise and friendly."
-)
+def start_agents():
+    """
+    Initializes and starts the agents.
+    """
+    logger.info("Starting agents...")
+    # Create instances of agents and connect them to the server
+    dummy_agent = DummyAgent()
 
-product_agent = ProductAgent(
-    name="Product_Agent",
-    llm_config=LLM_CONFIG,
-    system_message="You are a helpful assistant for product recommendations. Your role is to understand the user's needs, use your tools to find relevant products, and suggest them with clear explanations. Ask for more details if needed."
-)
+    # Connect the dummy agent to the server
+    logger.info("Connecting DummyAgent to the server...")
+    dummy_agent.connect()
 
-order_agent = OrderAgent(
-    name="Order_Agent",
-    llm_config=LLM_CONFIG,
-    system_message="You are a specialized agent for order and shipping inquiries. You will ask the user for their order ID and then use your tools to provide accurate order status and tracking information."
-)
+if __name__ == '__main__':
+    logger.info("--- Twinrad System Starting ---")
 
-handover_agent = HandoverAgent(
-    name="Handover_Agent",
-    llm_config=LLM_CONFIG,
-    system_message="You are the agent responsible for transferring the user to a human customer service representative. You will summarize the conversation and use your tools to inform the user about the transfer."
-)
+    # Step 1: Start the Socket.IO server in a separate thread
+    start_server_thread()
 
-# --- Define the Group Chat (Workflow) ---
-print("Configuring the group chat workflow...")
+    # Step 2: Initialize and start the agents
+    logger.info("Initializing agents...")
+    start_agents()
 
-group_chat = autogen.GroupChat(
-    agents=[router_agent, faq_agent, product_agent, order_agent, handover_agent],
-    messages=[],
-    max_rounds=50,
-    allow_repeat_speaker=False,
-)
-
-manager = autogen.GroupChatManager(groupchat=group_chat, llm_config=LLM_CONFIG)
-
-# --- Start the Conversation ---
-print("Chatbot initialized. Type 'bye' to end the conversation.")
-initial_message = "你好，我是 JTCG Shop 的智能客服，請問有什麼需要協助的嗎？"
-router_agent.initiate_chat(manager, message=initial_message)
+    logger.info("--- Twinrad System Running ---")
+    # Keep the main thread alive to allow the server and agents to run
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        logger.info("Shutting down the Twinrad system...")
+        # Here you can add cleanup logic for the agents if needed
+        logger.info("Twinrad system shutdown complete.")
+        exit(0)
