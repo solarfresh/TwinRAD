@@ -1,68 +1,52 @@
-import threading
-import time
+from autogen import GroupChat, GroupChatManager, LLMConfig, UserProxyAgent
 
 from configs.logging_config import setup_logging
-from server.server import run_server
-from twinrad.agents.dummy_agent import DummyAgent
+from twinrad.agents.evaluator_agent import EvaluatorAgent
+from twinrad.agents.gourmet_agent import GourmetAgent
+from twinrad.agents.introspection_agent import IntrospectionAgent
 from twinrad.agents.prompt_generator import PromptGenerator
 
 # --- Logger Configuration ---
 # Set up the logger using the centralized config function
 logger = setup_logging(name='[Main]')
 
-def start_server_thread():
-    """
-    Starts the Socket.IO server in a separate thread.
-    This allows the server to run concurrently with the main application logic.
-    """
-    logger.info("Starting Socket.IO server in a separate thread...")
-    # Create and start the server thread
-    server_thread = threading.Thread(target=run_server)
-    server_thread.daemon = True  # Make the thread a daemon so it exits when the main program exits
-    server_thread.start()
-    # Wait for the server to start
-    logger.info("Waiting for the server to start...")
-    time.sleep(1)
+# 1. Define LLM configuration
+llm_config = LLMConfig(
+    config_list=[{
+        "model": "gpt-4-turbo",  # Replace with a valid model name
+        "api_key": "YOUR_API_KEY",
+    }],
+    # ... other configurations
+)
 
-def start_agents():
-    """
-    Initializes and starts the agents.
-    """
-    logger.info("Starting agents...")
-    # Create instances of agents and connect them to the server
-    dummy_agent = DummyAgent()
-    prompt_generator = PromptGenerator()
+# 2. Instantiate agents using the new classes
+user_proxy = UserProxyAgent(
+    name="UserProxy",
+    system_message="A human user who provides an initial prompt and guidance.",
+    human_input_mode="NEVER",  # Set to "ALWAYS" for real human interaction
+    max_consecutive_auto_reply=0
+)
+evaluator_agent = EvaluatorAgent(llm_config=llm_config)
+gourmet_agent = GourmetAgent(llm_config=llm_config)
+introspection_agent = IntrospectionAgent(llm_config=llm_config)
+prompt_generator = PromptGenerator(llm_config=llm_config)
 
-    # Connect the dummy agent to the server
-    logger.info("Connecting DummyAgent to the server...")
-    dummy_thread = threading.Thread(target=dummy_agent.connect)
-    generator_thread = threading.Thread(target=prompt_generator.connect)
+# 3. Create the GroupChat with the agents
+group_chat = GroupChat(
+    agents=[user_proxy, evaluator_agent, gourmet_agent, introspection_agent, prompt_generator],
+    messages=[],
+    max_round=20,
+    speaker_selection_method="auto" # AutoGen uses LLM to decide who speaks next
+)
 
-    dummy_thread.daemon = True
-    generator_thread.daemon = True
+# 4. Create the GroupChatManager to orchestrate the conversation
+manager = GroupChatManager(
+    groupchat=group_chat,
+    llm_config=llm_config
+)
 
-    # Start the threads for both agents
-    logger.info("Starting agent threads...")
-    dummy_thread.start()
-    generator_thread.start()
-
-if __name__ == '__main__':
-    logger.info("--- Twinrad System Starting ---")
-
-    # Step 1: Start the Socket.IO server in a separate thread
-    start_server_thread()
-
-    # Step 2: Initialize and start the agents
-    logger.info("Initializing agents...")
-    start_agents()
-
-    logger.info("--- Twinrad System Running ---")
-    # Keep the main thread alive to allow the server and agents to run
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        logger.info("Shutting down the Twinrad system...")
-        # Here you can add cleanup logic for the agents if needed
-        logger.info("Twinrad system shutdown complete.")
-        exit(0)
+# 5. Start the conversation with an initial prompt from the user
+user_proxy.initiate_chat(
+    manager,
+    message="請幫我寫一份關於鯇魚膽食譜的詳細指南。"
+)

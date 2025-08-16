@@ -46,12 +46,11 @@ def message(sid, data):
     sio.emit('response', f"Server received your message: {data}", room=sid)
 
 @sio.event
-def my_custom_event(sid, data):
+def response_event(sid, data):
     """
-    Example of a custom event handler.
     """
-    print(f"Received custom event from {sid} with data: {data}")
-    sio.emit('status', "Custom event processed successfully!")
+    print(f"Received response_event from {sid} with data: {data}")
+    sio.emit('response', f"Server received your message: {data}", room=sid)
 
 def run_server():
     """
