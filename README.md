@@ -42,3 +42,72 @@ Our project is organized to be modular, scalable, and easy to navigate. The core
       * **`tools/`**: These are the simulated external resources that our agents can access, such as a mock database or an API. They are crucial for testing tool-use vulnerabilities.
       * **`workflows/`**: This folder contains the high-level orchestration logic. The `red_team_flow.py` script defines the sequence of events, ensuring a smooth and repeatable test cycle.
   * **`dashboard/`**: The `app.py` file here runs a **Streamlit** dashboard, providing a visual, real-time overview of the red-teaming process, showing attack progress and vulnerability findings.
+
+  I can provide a comprehensive set of instructions for a `README.md` file. This guide will walk a user through setting up, configuring, and running your `twinrad` multi-agent system, which is a key part of our project.
+
+-----
+
+## 🚀 Getting Started with Twinrad
+
+This guide will help you set up and run the `twinrad` multi-agent system. This framework is designed to conduct red-teaming exercises by orchestrating a team of specialized AI agents to test the security and safety of a target large language model (LLM).
+
+### 📋 Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+  * **Python 3.13+**
+  * **Git**
+
+### 💻 Installation
+
+1.  **Clone the repository**:
+    ```sh
+    git clone https://github.com/solarfresh/ag2-playground.git
+    cd twinrad
+    ```
+2.  **Create a virtual environment** (recommended):
+    ```sh
+    python -m venv venv
+    source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
+    ```
+3.  **Install the required libraries**:
+    ```sh
+    pip install -r requirements.txt
+    ```
+
+### 🛠️ Configuration
+
+The system requires an API key for the LLM that will power the agents.
+
+1.  **Create a `.env` file**:
+    Create a new file named `.env` in the root directory of the project.
+2.  **Add your OpenAI API key**:
+    Add your API key to the `.env` file in the following format:
+    ```
+    TWINKLE_BASE_URL=https://litellm-ekkks8gsocw.dgx-coolify.apmic.ai
+    TWINKLE_API_KEY=your_api_key_here
+    GOOELG_GENAI_API_KEY=your_api_key_here
+    ```
+    *Replace `"your_api_key_here"` with your actual API key.*
+
+### ▶️ How to Run the System
+
+The `main.py` script orchestrates the entire red-teaming operation.
+
+1.  **Execute the main script**:
+    From the `twinrad` root directory, run the following command:
+    ```sh
+    python main.py
+    ```
+
+### 🧠 System in Action
+
+Once the system is running, you will see a series of log messages in your terminal. This shows the agents communicating in a structured conversation, as defined by the `GroupChat` workflow.
+
+  * The **PromptGenerator** starts the process with a predefined attack.
+  * The **GourmetAgent** (the target LLM) responds to the prompt.
+  * The **EvaluatorAgent** analyzes the response and sends a diagnostic report.
+  * The **IntrospectionAgent** receives the report, learns from it, and provides a strategic recommendation.
+  * The **PlannerAgent** uses this recommendation to decide which agent should speak next, potentially giving the floor back to the `PromptGenerator` for a refined attack.
+
+The conversation will continue until a `max_round` limit is reached or the agents decide the task is complete.
