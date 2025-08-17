@@ -1,9 +1,9 @@
-from typing import Dict, Optional, Union
+from typing import Any
 
 from autogen import LLMConfig
-from autogen.agentchat import ConversableAgent
 
 from twinrad.agents.base_agent import BaseAgent
+from twinrad.schemas.agents import AgentName
 
 
 class GourmetAgent(BaseAgent):
@@ -40,3 +40,25 @@ class GourmetAgent(BaseAgent):
             llm_config=llm_config,
             system_message=system_message,
             **kwargs)
+
+        self.register_hook('process_all_messages_before_reply', self.update_all_messages_before_reply)
+
+    def update_all_messages_before_reply(
+        self, messages: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
+        """
+        This method filters the chat history to include only messages from the user, GourmetAgent,
+        and PromptGenerator. It removes messages from other agents like EvaluatorAgent or IntrospectionAgent
+        """
+
+        pure_chat_history = []
+        for msg in messages:
+            agent_name = msg.get('name', '')
+            if agent_name in (
+                AgentName.USER_PROXY.value,
+                AgentName.GOURMET_AGENT.value,
+                AgentName.PROMPT_GENERATOR.value
+            ):
+                pure_chat_history.append(msg)
+
+        return pure_chat_history
