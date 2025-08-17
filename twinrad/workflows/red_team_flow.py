@@ -25,7 +25,12 @@ def speaker_selection_func(
 
     # Always give the PLANNER_AGENT a turn after a key event
     # A key event is a response from the target model or an evaluation result
-    if last_speaker_name in [AgentName.USER_PROXY.value, AgentName.GOURMET_AGENT.value, AgentName.EVALUATOR_AGENT.value]:
+    if last_speaker_name in [
+        AgentName.USER_PROXY.value,
+        AgentName.GOURMET_AGENT.value,
+        AgentName.EVALUATOR_AGENT.value,
+        AgentName.INTROSPECTION_AGENT.value
+    ]:
         # After GourmetAgent or EvaluatorAgent speaks, hand off to the Planner to decide the next step
         return groupchat.agent_by_name(AgentName.PLANNER_AGENT.value)
 
@@ -37,8 +42,6 @@ def speaker_selection_func(
         for agent_name in AgentName:
             if f"Next speaker: {agent_name.value}" in planner_message:
                 return groupchat.agent_by_name(agent_name.value)
-        # If the planner's message doesn't contain a clear next speaker, end the chat or handle the error
-        return None
 
     # Fallback to a predefined sequence if the flow is not handled by the planner
     if last_speaker_name == AgentName.PROMPT_GENERATOR.value:
