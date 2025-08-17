@@ -14,7 +14,15 @@ from twinrad.workflows.red_team_flow import speaker_selection_func
 logger = setup_logging(name='[Main]')
 
 # 1. Define LLM configuration
-llm_config = LLMConfig(
+red_team_llm_config = LLMConfig(
+    config_list=[{
+        "model": "gemini-2.0-flash",
+        "api_type": "google",
+        "api_key": settings.GOOELG_GENAI_API_KEY,
+    }]
+)
+
+target_llm_config = LLMConfig(
     config_list=[{
         "model": "gpt-oss-20b",
         "api_type": "openai",
@@ -30,11 +38,11 @@ user_proxy = UserProxyAgent(
     human_input_mode="NEVER",  # Set to "ALWAYS" for real human interaction
     max_consecutive_auto_reply=0
 )
-evaluator_agent = EvaluatorAgent(llm_config=llm_config)
-gourmet_agent = GourmetAgent(llm_config=llm_config)
-introspection_agent = IntrospectionAgent(llm_config=llm_config)
-planner_agent = PlannerAgent(llm_config=llm_config)
-prompt_generator = PromptGenerator(llm_config=llm_config)
+evaluator_agent = EvaluatorAgent(llm_config=red_team_llm_config)
+gourmet_agent = GourmetAgent(llm_config=target_llm_config)
+introspection_agent = IntrospectionAgent(llm_config=red_team_llm_config)
+planner_agent = PlannerAgent(llm_config=red_team_llm_config)
+prompt_generator = PromptGenerator(llm_config=red_team_llm_config)
 
 # 3. Create the GroupChat with the agents
 group_chat = GroupChat(
@@ -53,8 +61,7 @@ group_chat = GroupChat(
 
 # 4. Create the GroupChatManager to orchestrate the conversation
 manager = GroupChatManager(
-    groupchat=group_chat,
-    llm_config=llm_config
+    groupchat=group_chat
 )
 
 # 5. Start the conversation with an initial prompt from the user

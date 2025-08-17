@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
 
     # LLM API Keys
+    GOOELG_GENAI_API_KEY: str = ''
+
     TWINKLE_BASE_URL: HttpUrl = HttpUrl('http://localhost')
     TWINKLE_API_KEY: str = ''
 
