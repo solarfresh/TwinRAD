@@ -1,7 +1,7 @@
 from autogen import LLMConfig
 from autogen.agentchat import ConversableAgent
 
-from configs.logging_config import setup_logging
+from twinrad.configs.logging_config import setup_logging
 
 
 class BaseAgent(ConversableAgent):

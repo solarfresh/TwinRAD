@@ -61,5 +61,9 @@ def run_server():
     eventlet.wsgi.server(
         eventlet.listen((settings.SERVER_HOST, settings.SERVER_PORT)), app)
 
-if __name__ == '__main__':
+def main():
+    """Main entry point for the server."""
     run_server()
+
+if __name__ == '__main__':
+    main()

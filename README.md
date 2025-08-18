@@ -94,10 +94,27 @@ The system requires an API key for the LLM that will power the agents.
 
 The `main.py` script orchestrates the entire red-teaming operation.
 
-1.  **Execute the main script**:
-    From the `twinrad` root directory, run the following command:
+1.  **Set PYTHONPATH** (required for module imports):
+    From the project root directory, export the PYTHONPATH:
     ```sh
-    python main.py
+    export PYTHONPATH="$PYTHONPATH:$(pwd)"
+    ```
+
+2.  **Execute the main script**:
+    From the project root directory, run the following command:
+    ```sh
+    python src/twinrad/main.py
+    ```
+
+    Or use the installed package commands:
+    ```sh
+    # Install in development mode first
+    pip install -e .
+    
+    # Then run using console commands
+    twinrad                  # Main red team workflow
+    twinrad-server          # Socket.IO server
+    twinrad-dashboard       # Streamlit dashboard
     ```
 
 ### 🧠 System in Action
