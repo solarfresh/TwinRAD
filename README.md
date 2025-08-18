@@ -62,8 +62,8 @@ Before you begin, ensure you have the following installed:
 
 1.  **Clone the repository**:
     ```sh
-    git clone https://github.com/solarfresh/ag2-playground.git
-    cd twinrad
+    git clone https://github.com/ai-twinkle/TwinRAD.git
+    cd TwinRAD
     ```
 2.  **Create a virtual environment** (recommended):
     ```sh
