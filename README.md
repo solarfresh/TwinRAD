@@ -1,6 +1,6 @@
-# ag2-playground
+# TwinRAD
 
-This repository serves as a learning environment and a hands-on playground for the AG2: Open-Source AgentOS for AI Agents framework.
+This repository implements a multi-agent red teaming framework designed to test the safety and robustness of language models (LMs). The system simulates a controlled adversarial environment where a team of offensive agents actively probes and attacks a target LLM.
 
 -----
 
