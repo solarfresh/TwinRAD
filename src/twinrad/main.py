@@ -18,7 +18,7 @@ red_team_llm_config = LLMConfig(
     config_list=[{
         "model": "gemini-2.0-flash",
         "api_type": "google",
-        "api_key": settings.GOOELG_GENAI_API_KEY,
+        "api_key": settings.gooelg_genai_api_key,
     }]
 )
 
@@ -26,8 +26,8 @@ target_llm_config = LLMConfig(
     config_list=[{
         "model": "gpt-oss-20b",
         "api_type": "openai",
-        "base_url": str(settings.TWINKLE_BASE_URL),
-        "api_key": settings.TWINKLE_API_KEY,
+        "base_url": str(settings.twinkle_base_url),
+        "api_key": settings.twinkle_api_key,
     }],
 )
 

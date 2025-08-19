@@ -2,12 +2,19 @@ import eventlet
 import eventlet.wsgi
 import socketio
 
-from configs.settings import settings
-from configs.logging_config import setup_logging
+try:
+    from server.settings import ServerSettings
+except ModuleNotFoundError:
+    # When running from server directory directly
+    from settings import ServerSettings
+
+# Initialize server-specific settings
+settings = ServerSettings()
 
 # --- Logger Configuration ---
-# Set up the logger using the centralized config function
-logger = setup_logging(name='[server]')
+# Set up basic logging (we'll implement proper logging setup later)
+import logging
+logging.basicConfig(level=getattr(logging, settings.log_level.upper()))
 
 # --- Socket.IO Server ---
 
@@ -56,10 +63,10 @@ def run_server():
     """
     Runs the Socket.IO server.
     """
-    print("Starting Socket.IO server on localhost:5000")
+    print(f"Starting Socket.IO server on {settings.server_host}:{settings.server_port}")
     # Wrap the app in Eventlet's WSGI server
     eventlet.wsgi.server(
-        eventlet.listen((settings.SERVER_HOST, settings.SERVER_PORT)), app)
+        eventlet.listen((settings.server_host, settings.server_port)), app)
 
 def main():
     """Main entry point for the server."""
