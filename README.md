@@ -2,197 +2,197 @@
 
 This repository implements a multi-agent red teaming framework designed to test the safety and robustness of language models (LMs). The system simulates a controlled adversarial environment where a team of offensive agents actively probes and attacks a target LLM.
 
------
+## 📖 Table of Contents
 
-## Project Structure 📂
+  - [Project Overview](https://www.google.com/search?q=%23project-overview)
+  - [Agent Guidelines](https://www.google.com/search?q=%23agent-guidelines)
+  - [Development Workflow](https://www.google.com/search?q=%23development-workflow)
+  - [Architecture](https://www.google.com/search?q=%23architecture)
+  - [Examples](https://www.google.com/search?q=%23examples)
+  - [Configuration](https://www.google.com/search?q=%23configuration)
+  - [Testing](https://www.google.com/search?q=%23testing)
+  - [Troubleshooting](https://www.google.com/search?q=%23troubleshooting)
+  - [Contributing](https://www.google.com/search?q=%23contributing)
+  - [Security Considerations](https://www.google.com/search?q=%23security-considerations)
 
-Our project follows PyPA standards with a modern `src/` layout. The system is organized to be modular, scalable, and easy to navigate.
+## Project Overview
 
-```
-.
-├── LICENSE                     # Apache License 2.0
-├── README.md                   # Project overview and setup guide
-├── AGENTS.md                   # AI agent development guidance
-├── pyproject.toml              # Modern Python packaging configuration
-├── MANIFEST.in                 # Package distribution manifest
-├── .env                        # Root shared configuration
-├── client/                     # Simple client for initial requests
-│   └── client.py
-├── server/                     # Socket.IO communication server
-│   ├── settings.py             # Server-specific configuration
-│   ├── .env                    # Server configuration overrides
-│   └── server.py               # Socket.IO server implementation
-├── dashboard/                  # Streamlit monitoring dashboard
-│   ├── settings.py             # Dashboard-specific configuration
-│   ├── .env                    # Dashboard configuration overrides
-│   └── app.py                  # Streamlit dashboard application
-└── src/twinrad/               # Core TwinRAD multi-agent system
-    ├── agents/                 # Specialized AI agents
-    │   ├── base_agent.py       # Shared agent logic
-    │   ├── evaluator_agent.py  # Safety violation analyzer
-    │   ├── gourmet_agent.py    # Target LLM being tested
-    │   ├── introspection_agent.py # Learning and strategy agent
-    │   ├── planner_agent.py    # Conversation orchestrator
-    │   └── prompt_generator.py # Adversarial prompt creator
-    ├── configs/                # Core configuration
-    │   ├── settings.py         # Core TwinRAD settings
-    │   └── logging_config.py   # Logging configuration
-    ├── main.py                 # Main entry point
-    ├── tools/                  # Agent tools and utilities
-    │   ├── reward_tool.py      # Reward system
-    │   ├── safety_db_tool.py   # Safety violation database
-    │   └── social_media_tool.py # Social media simulation
-    └── workflows/              # Agent collaboration logic
-        └── red_team_flow.py    # Red team orchestration
-```
+TwinRAD is a multi-agent red teaming framework built with AutoGen (AG2) for testing the safety and robustness of language models. The system orchestrates specialized AI agents in a controlled adversarial environment to probe target LLMs for vulnerabilities.
 
-### Key Components Explained
+### Purpose
 
-  * **`src/twinrad/`**: Core multi-agent red teaming framework with isolated configuration
-      * **`agents/`**: Specialized AI agents (PromptGenerator, GourmetAgent, EvaluatorAgent, IntrospectionAgent, PlannerAgent)
-      * **`configs/`**: Core TwinRAD settings and logging configuration
-      * **`tools/`**: Simulated external resources for testing tool-use vulnerabilities
-      * **`workflows/`**: High-level orchestration logic for agent interactions
-  * **`server/`**: Independent Socket.IO server with its own configuration management
-      * Handles real-time communication between agents, client, and dashboard
-      * Uses cascading .env configuration (server/.env + root .env)
-  * **`dashboard/`**: Independent Streamlit dashboard with isolated settings
-      * Real-time monitoring of red teaming process
-      * Shows attack progress and vulnerability findings
-      * Configurable themes and display options
-  * **`client/`**: Simple client utilities for initial requests and testing
+  - **Defensive Security**: Test LLM safety mechanisms
+  - **Vulnerability Assessment**: Identify potential attack vectors
+  - **Research Platform**: Support AI alignment and safety research
 
------
+### Scope
 
-## 🚀 Getting Started with Twinrad
+This framework is designed exclusively for defensive security testing, LLM safety evaluation, and academic research on AI alignment. **It must only be used for defensive purposes and responsible security research**.
 
-This guide will help you set up and run the `twinrad` multi-agent system. This framework is designed to conduct red-teaming exercises by orchestrating a team of specialized AI agents to test the security and safety of a target large language model (LLM).
+## Agent Guidelines
 
-### 📋 Prerequisites
+### General Principles
 
-Before you begin, ensure you have the following installed:
+1.  **Security First**: Always prioritize defensive security applications
+2.  **Code Quality**: Follow Python best practices and PEP 8
+3.  **Documentation**: Maintain clear, comprehensive documentation
+4.  **Testing**: Ensure robust test coverage for all components
+5.  **Configuration**: Use isolated service configurations
 
-  * **Python 3.13+**
-  * **Git**
+### Coding Standards
 
-### 💻 Installation
+  - Use type hints for all function parameters and return values
+  - Follow `snake_case` naming conventions for variables and functions
+  - Use uppercase for environment variables (e.g., `API_KEY`)
+  - Implement proper error handling with specific exception types
+  - Add docstrings to all classes and functions
 
-1.  **Clone the repository**:
-    ```sh
-    git clone https://github.com/ai-twinkle/TwinRAD.git
-    cd TwinRAD
-    ```
-2.  **Create a virtual environment** (recommended):
-    ```sh
-    python -m venv venv
-    source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
-    ```
-3.  **Install the package in development mode**:
-    ```sh
-    pip install -e .
-    ```
-    
-    Or install requirements directly:
-    ```sh
-    pip install -r requirements.txt
-    ```
+## Development Workflow
 
-### 🛠️ Configuration
+### Environment Setup
 
-The system uses a cascading configuration system with isolated service settings.
+```bash
+# 1. Clone repository
+git clone <repository-url>
+cd TwinRAD
 
-1.  **Create a root `.env` file**:
-    Create a new file named `.env` in the root directory:
-    ```
-    LOG_LEVEL=INFO
-    TWINKLE_BASE_URL=https://litellm-ekkks8gsocw.dgx-coolify.apmic.ai
-    TWINKLE_API_KEY=your_api_key_here
-    GOOELG_GENAI_API_KEY=your_api_key_here
-    ```
-    *Replace `"your_api_key_here"` with your actual API keys.*
+# 2. Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-2.  **Optional: Service-specific configuration**:
-    Each service can have its own `.env` file for overrides:
-    ```
-    # server/.env (optional)
-    SERVER_HOST=0.0.0.0
-    SERVER_PORT=5000
-    
-    # dashboard/.env (optional)
-    DASHBOARD_HOST=0.0.0.0
-    DASHBOARD_PORT=8501
-    THEME=dark
-    ```
-
-### ▶️ How to Run the System
-
-The system provides multiple execution methods with independent service configuration.
-
-#### **Method 1: Console Commands (Recommended)**
-```sh
-# Install in development mode first
+# 3. Install in development mode
 pip install -e .
 
-# Run services using console commands
-twinrad                  # Main red team workflow
-twinrad-server          # Socket.IO server
-twinrad-dashboard       # Streamlit dashboard
+# 4. Configure environment
+cp .env.example .env
+# Edit .env with your API keys
 ```
 
-#### **Method 2: Direct Python Execution**
-```sh
-# Main red team workflow
-python src/twinrad/main.py
+### Running the System
 
-# Optional: Run services independently
-python server/server.py          # Socket.IO server
-streamlit run dashboard/app.py    # Streamlit dashboard
+  - **Main red team workflow**: `twinrad`
+  - **Socket.IO server**: `twinrad-server`
+  - **Streamlit dashboard**: `twinrad-dashboard`
+
+-----
+
+## Architecture
+
+Our project follows PyPA standards with a modern `src/` layout. The system is modular, scalable, and easy to navigate.
+
+### Core Components
+
+```
+src/twinrad/
+├── agents/                 # Specialized AI agents organized by team
+│   ├── blue_team/          # Agents for defensive security
+│   ├── red_team/           # Agents for offensive security
+│   ├── target_agents/      # The target LLMs under evaluation
+│   └── common/             # Base classes and shared agents
+├── clients/                # API client implementations
+├── configs/                # Configuration management
+├── schemas/                # Data models and validation schemas
+├── tools/                  # Specialized utility tools for agents
+└── workflows/              # Orchestration logic for agent interactions
 ```
 
-#### **Method 3: Package Module Execution**
-```sh
-# Set PYTHONPATH (if needed)
-export PYTHONPATH="$PYTHONPATH:$(pwd)"
+-----
 
-# Run as module
-python -m twinrad.main
+## Examples
+
+### Creating a New Agent
+
+```python
+# src/twinrad/agents/my_new_agent.py
+from typing import List, Dict, Any, Optional
+from autogen import ConversableAgent
+
+from twinrad.agents.base_agent import BaseAgent
+from twinrad.schemas.agents import AgentName
+
+# ... (rest of the example code from AGENTS.md)
 ```
 
-### 🧠 System in Action
+### Custom Tool Integration
 
-Once the system is running, you will see a series of log messages in your terminal. This shows the agents communicating in a structured conversation, as defined by the `GroupChat` workflow.
+```python
+# src/twinrad/tools/my_custom_tool.py
+from typing import Dict, Any, List
+import logging
 
-  * The **PromptGenerator** starts the process with a predefined attack.
-  * The **GourmetAgent** (the target LLM) responds to the prompt.
-  * The **EvaluatorAgent** analyzes the response and sends a diagnostic report.
-  * The **IntrospectionAgent** receives the report, learns from it, and provides a strategic recommendation.
-  * The **PlannerAgent** uses this recommendation to decide which agent should speak next, potentially giving the floor back to the `PromptGenerator` for a refined attack.
-
-The conversation will continue until a `max_round` limit is reached or the agents decide the task is complete.
-
-### 🔧 Service Independence
-
-Each service can run independently with its own configuration:
-
-- **Core TwinRAD**: Loads `src/twinrad/configs/settings.py` + root `.env`
-- **Server**: Loads `server/settings.py` with `server/.env` + root `.env` cascading
-- **Dashboard**: Loads `dashboard/settings.py` with `dashboard/.env` + root `.env` cascading
-
-Services can be run from their own directories:
-```sh
-cd server && python server.py        # Independent server execution
-cd dashboard && streamlit run app.py # Independent dashboard execution
+# ... (rest of the example code from AGENTS.md)
 ```
 
-### 🏗️ Architecture Features
+-----
 
-- **Isolated Service Configuration**: Each service has its own settings management
-- **Cascading Environment Variables**: Service-specific values override root defaults
-- **Smart Import Resolution**: Context-aware imports for both package and direct execution
-- **Zero Hardcoded Paths**: Clean Pydantic SettingsConfigDict implementation
-- **Runtime Configuration**: Environment variables can override settings at runtime
-- **Robust Execution**: Services work from any directory or execution context
+## Configuration
 
----
+### Environment Variables
 
-**Current Version**: [0.1.0](https://github.com/ai-twinkle/TwinRAD/releases/tag/0.1.0) - Import Resolution & Code Quality
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `LOG_LEVEL` | Logging verbosity | `INFO` | No |
+| `GOOELG_GENAI_API_KEY` | Google Gemini API key | - | Yes |
+| `TWINKLE_BASE_URL` | Target LLM API endpoint | - | Yes |
+| `TWINKLE_API_KEY` | Target LLM API key | - | Yes |
+| `SERVER_HOST` | Server bind address | `localhost` | No |
+| `SERVER_PORT` | Server port | `5000` | No |
+| `DASHBOARD_HOST` | Dashboard bind address | `localhost` | No |
+| `DASHBOARD_PORT` | Dashboard port | `8501` | No |
+
+-----
+
+## Testing
+
+### Running Tests
+
+```bash
+# Run all tests
+python -m pytest
+
+# Run with coverage
+python -m pytest --cov=src/twinrad
+
+# Run specific test file
+python -m pytest tests/test_agents.py
+```
+
+### Test Structure
+
+```
+tests/
+├── conftest.py              # Test configuration
+├── test_agents/             # Agent-specific tests
+├── test_configs/            # Configuration tests
+└── test_integration/        # Integration tests
+```
+
+-----
+
+## Troubleshooting
+
+### Common Issues
+
+  - **Import Errors**: If you encounter `ModuleNotFoundError`, ensure you have installed the package in development mode (`pip install -e .`).
+  - **Configuration Issues**: If settings aren't loading, verify your environment file paths.
+  - **Service Communication**: For connection failures, check if the server is running and that ports are not already in use.
+
+-----
+
+## Contributing
+
+1.  **Fork** the repository
+2.  **Create** a feature branch
+3.  **Implement** changes following the guidelines
+4.  **Test** thoroughly with `pytest`
+5.  **Document** changes
+6.  **Submit** a pull request with a clear description
+
+-----
+
+## Security Considerations
+
+  - Never commit API keys or sensitive data to the repository.
+  - Use environment variables for all configuration.
+  - Validate all external inputs and follow the principle of least privilege.
+  - Document security assumptions and requirements.
