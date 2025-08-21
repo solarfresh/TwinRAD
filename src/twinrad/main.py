@@ -1,13 +1,20 @@
 from autogen import GroupChat, GroupChatManager, LLMConfig, UserProxyAgent
 
-from twinrad.configs.logging_config import setup_logging
-from twinrad.configs.settings import settings
-from twinrad.agents.evaluator_agent import EvaluatorAgent
-from twinrad.agents.fuzzing_agent import FuzzingAgent
-from twinrad.agents.gourmet_agent import GourmetAgent
-from twinrad.agents.introspection_agent import IntrospectionAgent
-from twinrad.agents.planner_agent import PlannerAgent
-from twinrad.agents.prompt_generator import PromptGenerator
+from configs.logging_config import setup_logging
+from configs.settings import settings
+from twinrad.agents.blue_team.soc_analyst import EvaluatorAgent
+from twinrad.agents.blue_team.threat_hunter import ThreatForecasterAgent
+from twinrad.agents.blue_team.vulnerability_management_analyst import (
+    IntrospectionAgent,
+    StrategicAdviseAgent
+)
+from twinrad.agents.common.team_leader import PlannerAgent
+from twinrad.agents.red_team.ethical_hacker import (
+    AttackVectorAgent,
+    CreativeBreakerAgent
+)
+from twinrad.agents.red_team.penetration_tester import FuzzingAgent
+from twinrad.agents.target_agents.gourmet_agent import GourmetAgent
 from twinrad.workflows.red_team_flow import speaker_selection_func
 
 # --- Logger Configuration ---
@@ -15,6 +22,8 @@ from twinrad.workflows.red_team_flow import speaker_selection_func
 logger = setup_logging(name='[Main]')
 
 # 1. Define LLM configuration
+
+message_role = 'system'
 red_team_llm_config = LLMConfig(
     config_list=[{
         "model": "gemini-2.5-flash",
@@ -22,15 +31,6 @@ red_team_llm_config = LLMConfig(
         "api_key": settings.gooelg_genai_api_key,
     }]
 )
-
-# red_team_llm_config = LLMConfig(
-#     config_list=[{
-#         "model": "gpt-oss-120b",
-#         "api_type": "openai",
-#         "base_url": str(settings.TWINKLE_BASE_URL),
-#         "api_key": settings.TWINKLE_API_KEY,
-#     }],
-# )
 
 target_llm_config = LLMConfig(
     config_list=[{
@@ -49,23 +49,38 @@ user_proxy = UserProxyAgent(
     max_consecutive_auto_reply=0,
     code_execution_config={"use_docker": False}
 )
-fuzzing_agent = FuzzingAgent(llm_config=red_team_llm_config, mode='llm_fuzz')
-evaluator_agent = EvaluatorAgent(llm_config=red_team_llm_config)
-gourmet_agent = GourmetAgent(llm_config=target_llm_config)
-introspection_agent = IntrospectionAgent(llm_config=red_team_llm_config)
-planner_agent = PlannerAgent(llm_config=red_team_llm_config)
-prompt_generator = PromptGenerator(llm_config=red_team_llm_config)
+creative_breaker_agent = CreativeBreakerAgent(llm_config=red_team_llm_config, message_role=message_role)
+threat_forecaster_agent = ThreatForecasterAgent(llm_config=red_team_llm_config, message_role=message_role)
+strategic_advise_agent = StrategicAdviseAgent(llm_config=red_team_llm_config, message_role=message_role)
+
+fuzzing_agent = FuzzingAgent(
+    llm_config=red_team_llm_config,
+    message_role=message_role,
+    mode='llm_fuzz',
+    num_mutations=5,
+    negotiation_agents=[
+        creative_breaker_agent,
+        threat_forecaster_agent,
+        strategic_advise_agent,
+    ],
+    init_recipient=threat_forecaster_agent
+)
+evaluator_agent = EvaluatorAgent(llm_config=red_team_llm_config, message_role=message_role)
+gourmet_agent = GourmetAgent(llm_config=target_llm_config, message_role=message_role)
+introspection_agent = IntrospectionAgent(llm_config=red_team_llm_config, message_role=message_role)
+planner_agent = PlannerAgent(llm_config=red_team_llm_config, message_role=message_role)
+attack_vector_agent = AttackVectorAgent(llm_config=red_team_llm_config, message_role=message_role)
 
 # 3. Create the GroupChat with the agents
 group_chat = GroupChat(
     agents=[
+        attack_vector_agent,
         user_proxy,
         fuzzing_agent,
         evaluator_agent,
         gourmet_agent,
         introspection_agent,
         planner_agent,
-        prompt_generator
     ],
     messages=[],
     max_round=100,
