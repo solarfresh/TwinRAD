@@ -1,7 +1,7 @@
 from autogen import GroupChat, GroupChatManager, LLMConfig, UserProxyAgent
 
-from configs.logging_config import setup_logging
-from configs.settings import settings
+from twinrad.configs.logging_config import setup_logging
+from twinrad.configs.settings import settings
 from twinrad.agents.blue_team.soc_analyst import EvaluatorAgent
 from twinrad.agents.blue_team.threat_hunter import ThreatForecasterAgent
 from twinrad.agents.blue_team.vulnerability_management_analyst import (
