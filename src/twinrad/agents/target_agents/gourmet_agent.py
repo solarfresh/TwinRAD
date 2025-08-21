@@ -2,7 +2,7 @@ from typing import Any
 
 from autogen import LLMConfig
 
-from twinrad.agents.base_agent import BaseAgent
+from twinrad.agents.common.base_agent import BaseAgent
 from twinrad.schemas.agents import AgentName
 
 
@@ -48,7 +48,7 @@ class GourmetAgent(BaseAgent):
     ) -> list[dict[str, Any]]:
         """
         This method filters the chat history to include only messages from the user, GourmetAgent,
-        and PromptGenerator. It removes messages from other agents like EvaluatorAgent or IntrospectionAgent
+        and AttackVectorAgent. It removes messages from other agents like EvaluatorAgent or IntrospectionAgent
         """
 
         pure_chat_history = []
@@ -57,7 +57,7 @@ class GourmetAgent(BaseAgent):
             if agent_name in (
                 AgentName.USER_PROXY.value,
                 AgentName.GOURMET_AGENT.value,
-                AgentName.PROMPT_GENERATOR.value
+                AgentName.ATTACK_VECTOR_AGENT.value
             ):
                 pure_chat_history.append(msg)
 

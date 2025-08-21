@@ -1,6 +1,6 @@
 from autogen import LLMConfig
 
-from twinrad.agents.base_agent import BaseAgent
+from twinrad.agents.common.base_agent import BaseAgent
 
 
 class DummyAgent(BaseAgent):
