@@ -5,6 +5,7 @@ from socketio.exceptions import ConnectionError
 
 from configs.logging_config import setup_logging
 from configs.settings import settings
+from server.settings import ServerSettings
 
 test_variable = "This is a test variable for the client."
 session_state = {
@@ -51,7 +52,8 @@ def run_sio_client():
     try:
         # Connect to the server. This is a blocking call.
         logger.info("Attempting to connect to the server...")
-        sio.connect(f'http://{settings.SERVER_HOST}:{settings.SERVER_PORT}')
+        server_settings = ServerSettings()
+        sio.connect(f'http://{server_settings.server_host}:{server_settings.server_port}')
         # Wait for the connection to be established
         while not session_state["connected"]:
             # Sleep to allow the connection to establish

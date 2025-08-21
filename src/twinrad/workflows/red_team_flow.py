@@ -2,7 +2,7 @@ from typing import Union
 
 from autogen.agentchat import Agent, GroupChat
 
-from configs.logging_config import setup_logging
+from twinrad.configs.logging_config import setup_logging
 from twinrad.schemas.agents import AgentName
 
 logger = setup_logging(name=f"[FLOW]")

@@ -1,0 +1,14 @@
+include README.md
+include LICENSE
+include AGENTS.md
+recursive-include src/twinrad *.py
+recursive-include configs *.py
+recursive-include server *.py
+recursive-include dashboard *.py
+recursive-include client *.py
+include requirements.txt
+exclude .env*
+exclude *.pyc
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
+recursive-exclude twinrad-dev *

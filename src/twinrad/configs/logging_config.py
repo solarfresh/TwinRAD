@@ -6,7 +6,7 @@ def setup_logging(name='twinrad'):
     """
     Sets up the application's logging configuration.
 
-    The log level is set based on the `settings.LOG_LEVEL` environment variable.
+    The log level is set based on the `settings.log_level` environment variable.
     If not specified, it defaults to 'INFO'.
 
     @param name: The name of the logger. Defaults to 'twinrad'.
@@ -16,7 +16,7 @@ def setup_logging(name='twinrad'):
     logger = logging.getLogger(name)
 
     # Get the log level from settings, default to INFO if not set
-    log_level = getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO)
+    log_level = getattr(logging, settings.log_level.upper(), logging.INFO)
     logger.setLevel(log_level)
 
     # Create a console handler to print logs to the standard output
