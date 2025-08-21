@@ -2,11 +2,13 @@ import eventlet
 import eventlet.wsgi
 import socketio
 
-try:
-    from server.settings import ServerSettings
-except ModuleNotFoundError:
-    # When running from server directory directly
+# Smart import: Use relative import when running directly, absolute when installed
+if __package__ is None:
+    # Direct execution (python server.py)
     from settings import ServerSettings
+else:
+    # Package execution (python -m server.server or installed package)
+    from server.settings import ServerSettings
 
 # Initialize server-specific settings
 settings = ServerSettings()

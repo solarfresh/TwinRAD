@@ -1,6 +1,6 @@
 include README.md
 include LICENSE
-include agent.md
+include AGENTS.md
 recursive-include src/twinrad *.py
 recursive-include configs *.py
 recursive-include server *.py

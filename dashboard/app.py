@@ -1,10 +1,12 @@
 import streamlit as st
 
-try:
-    from dashboard.settings import DashboardSettings
-except ModuleNotFoundError:
-    # When running from dashboard directory directly
+# Smart import: Use relative import when running directly, absolute when installed
+if __package__ is None:
+    # Direct execution (python app.py or streamlit run app.py)
     from settings import DashboardSettings
+else:
+    # Package execution (python -m dashboard.app or installed package)
+    from dashboard.settings import DashboardSettings
 
 # Initialize dashboard-specific settings
 settings = DashboardSettings()

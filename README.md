@@ -12,7 +12,7 @@ Our project follows PyPA standards with a modern `src/` layout. The system is or
 .
 ├── LICENSE                     # Apache License 2.0
 ├── README.md                   # Project overview and setup guide
-├── agent.md                    # AI agent development guidance
+├── AGENTS.md                   # AI agent development guidance
 ├── pyproject.toml              # Modern Python packaging configuration
 ├── MANIFEST.in                 # Package distribution manifest
 ├── .env                        # Root shared configuration
@@ -188,17 +188,11 @@ cd dashboard && streamlit run app.py # Independent dashboard execution
 
 - **Isolated Service Configuration**: Each service has its own settings management
 - **Cascading Environment Variables**: Service-specific values override root defaults
-- **Smart Import Fallback**: Handles both package and direct execution contexts
+- **Smart Import Resolution**: Context-aware imports for both package and direct execution
 - **Zero Hardcoded Paths**: Clean Pydantic SettingsConfigDict implementation
 - **Runtime Configuration**: Environment variables can override settings at runtime
+- **Robust Execution**: Services work from any directory or execution context
 
 ---
 
-## Recent Updates
-
-### 2024-08-19: System Verification and Bug Fixes
-- ✅ **All services operational**: Core TwinRAD, Dashboard, and Server verified working
-- ✅ **Fixed configuration issues**: Updated attribute naming and API endpoints
-- ✅ **Complete isolated service configuration**: All acceptance criteria for Issue #3 validated
-- ✅ **Environment variable overrides**: Confirmed runtime configuration works correctly
-- ✅ **PyPA compliance**: Modern packaging structure with src/ layout and console scripts
+**Current Version**: [0.2.0](https://github.com/ai-twinkle/TwinRAD/releases/tag/0.2.0) - Import Resolution & Code Quality Release
