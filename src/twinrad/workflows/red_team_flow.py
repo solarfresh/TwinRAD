@@ -29,7 +29,7 @@ def speaker_selection_func(
         planner_message = last_message.get("content", "")
         # The planner's message should look like: "Next speaker: PromptGenerator"
         for agent_name in AgentName:
-            if agent_name.value in planner_message:
+            if f'Next speaker: {agent_name.value}' in planner_message:
                 return groupchat.agent_by_name(agent_name.value)
 
         return groupchat.agent_by_name(AgentName.PROMPT_GENERATOR.value)

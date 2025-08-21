@@ -17,11 +17,20 @@ logger = setup_logging(name='[Main]')
 # 1. Define LLM configuration
 red_team_llm_config = LLMConfig(
     config_list=[{
-        "model": "gemini-2.0-flash",
+        "model": "gemini-2.5-flash",
         "api_type": "google",
         "api_key": settings.gooelg_genai_api_key,
     }]
 )
+
+# red_team_llm_config = LLMConfig(
+#     config_list=[{
+#         "model": "gpt-oss-120b",
+#         "api_type": "openai",
+#         "base_url": str(settings.TWINKLE_BASE_URL),
+#         "api_key": settings.TWINKLE_API_KEY,
+#     }],
+# )
 
 target_llm_config = LLMConfig(
     config_list=[{
@@ -59,7 +68,7 @@ group_chat = GroupChat(
         prompt_generator
     ],
     messages=[],
-    max_round=20,
+    max_round=100,
     speaker_selection_method=speaker_selection_func
 )
 
