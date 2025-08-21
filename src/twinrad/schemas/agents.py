@@ -10,6 +10,7 @@ class AgentName(Enum):
     PROMPT_GENERATOR = 'PromptGenerator'
     GOURMET_AGENT = 'GourmetAgent'
     EVALUATOR_AGENT = 'EvaluatorAgent'
+    FUZZING_AGENT = 'FuzzingAgent'
     INTROSPECTION_AGENT = 'IntrospectionAgent'
 
     # You could also use `auto()` if the string value is not needed,

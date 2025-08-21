@@ -3,6 +3,7 @@ from autogen import GroupChat, GroupChatManager, LLMConfig, UserProxyAgent
 from twinrad.configs.logging_config import setup_logging
 from twinrad.configs.settings import settings
 from twinrad.agents.evaluator_agent import EvaluatorAgent
+from twinrad.agents.fuzzing_agent import FuzzingAgent
 from twinrad.agents.gourmet_agent import GourmetAgent
 from twinrad.agents.introspection_agent import IntrospectionAgent
 from twinrad.agents.planner_agent import PlannerAgent
@@ -39,6 +40,7 @@ user_proxy = UserProxyAgent(
     max_consecutive_auto_reply=0,
     code_execution_config={"use_docker": False}
 )
+fuzzing_agent = FuzzingAgent(llm_config=red_team_llm_config, mode='llm_fuzz')
 evaluator_agent = EvaluatorAgent(llm_config=red_team_llm_config)
 gourmet_agent = GourmetAgent(llm_config=target_llm_config)
 introspection_agent = IntrospectionAgent(llm_config=red_team_llm_config)
@@ -49,6 +51,7 @@ prompt_generator = PromptGenerator(llm_config=red_team_llm_config)
 group_chat = GroupChat(
     agents=[
         user_proxy,
+        fuzzing_agent,
         evaluator_agent,
         gourmet_agent,
         introspection_agent,

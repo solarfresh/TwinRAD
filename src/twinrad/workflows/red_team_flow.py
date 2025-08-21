@@ -23,6 +23,29 @@ def speaker_selection_func(
     last_message = messages[-1]
     last_speaker_name = last_speaker.name
 
+    # The Planner's response should explicitly name the next speaker.
+    # We check if the last message from the Planner contains a recognized agent name.
+    if last_speaker_name == AgentName.PLANNER_AGENT.value:
+        planner_message = last_message.get("content", "")
+        # The planner's message should look like: "Next speaker: PromptGenerator"
+        for agent_name in AgentName:
+            if agent_name.value in planner_message:
+                return groupchat.agent_by_name(agent_name.value)
+
+        return groupchat.agent_by_name(AgentName.PROMPT_GENERATOR.value)
+
+    # Fallback to a predefined sequence if the flow is not handled by the planner
+    if last_speaker_name == AgentName.PROMPT_GENERATOR.value:
+        return groupchat.agent_by_name(AgentName.FUZZING_AGENT.value)
+
+    if last_speaker_name == AgentName.FUZZING_AGENT.value:
+        return groupchat.agent_by_name(AgentName.GOURMET_AGENT.value)
+
+    # After a successful evaluation, the IntrospectionAgent speaks
+    if last_speaker_name == AgentName.EVALUATOR_AGENT.value:
+        # This part of the logic could also be handled by the Planner
+        return groupchat.agent_by_name(AgentName.INTROSPECTION_AGENT.value)
+
     # Always give the PLANNER_AGENT a turn after a key event
     # A key event is a response from the target model or an evaluation result
     if last_speaker_name in [
@@ -33,23 +56,5 @@ def speaker_selection_func(
     ]:
         # After GourmetAgent or EvaluatorAgent speaks, hand off to the Planner to decide the next step
         return groupchat.agent_by_name(AgentName.PLANNER_AGENT.value)
-
-    # The Planner's response should explicitly name the next speaker.
-    # We check if the last message from the Planner contains a recognized agent name.
-    if last_speaker_name == AgentName.PLANNER_AGENT.value:
-        planner_message = last_message.get("content", "")
-        # The planner's message should look like: "Next speaker: PromptGenerator"
-        for agent_name in AgentName:
-            if agent_name.value in planner_message:
-                return groupchat.agent_by_name(agent_name.value)
-
-    # Fallback to a predefined sequence if the flow is not handled by the planner
-    if last_speaker_name == AgentName.PROMPT_GENERATOR.value:
-        return groupchat.agent_by_name(AgentName.GOURMET_AGENT.value)
-
-    # After a successful evaluation, the IntrospectionAgent speaks
-    if last_speaker_name == AgentName.EVALUATOR_AGENT.value:
-        # This part of the logic could also be handled by the Planner
-        return groupchat.agent_by_name(AgentName.INTROSPECTION_AGENT.value)
 
     return None # End the conversation if the flow is complete or an error occurs
