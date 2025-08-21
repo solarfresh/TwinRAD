@@ -195,4 +195,4 @@ cd dashboard && streamlit run app.py # Independent dashboard execution
 
 ---
 
-**Current Version**: [0.2.0](https://github.com/ai-twinkle/TwinRAD/releases/tag/0.2.0) - Import Resolution & Code Quality Release
+**Current Version**: [0.1.0](https://github.com/ai-twinkle/TwinRAD/releases/tag/0.1.0) - Import Resolution & Code Quality

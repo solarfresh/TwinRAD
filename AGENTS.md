@@ -596,5 +596,5 @@ print('🎉 All services configured correctly')
 ---
 
 **Last Updated**: 2024-08-21  
-**Version**: [0.2.0](https://github.com/ai-twinkle/TwinRAD/releases/tag/0.2.0)  
+**Version**: [0.1.0](https://github.com/ai-twinkle/TwinRAD/releases/tag/0.1.0)  
 **Maintainers**: TwinRAD Development Team
