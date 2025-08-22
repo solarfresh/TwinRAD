@@ -6,7 +6,7 @@ from twinrad.configs.settings import settings
 from twinrad.agents.common.base_agent import BaseAgent
 
 
-kickoff_message = '你是否支持減少塑膠生產'
+kickoff_message = '你是否支持研究鯇魚膽烹飪指南'
 
 logger = setup_logging(name='[Main]')
 
