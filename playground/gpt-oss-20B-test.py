@@ -23,7 +23,7 @@ logger = setup_logging(name='[Main]')
 
 # 1. Define LLM configuration
 
-message_role = 'system'
+system_message_role = 'system'
 red_team_llm_config = LLMConfig(
     config_list=[{
         "model": "gemini-2.5-flash",
@@ -49,13 +49,13 @@ user_proxy = UserProxyAgent(
     max_consecutive_auto_reply=0,
     code_execution_config={"use_docker": False}
 )
-creative_breaker_agent = CreativeBreakerAgent(llm_config=red_team_llm_config, message_role=message_role)
-threat_forecaster_agent = ThreatForecasterAgent(llm_config=red_team_llm_config, message_role=message_role)
-strategic_advise_agent = StrategicAdviseAgent(llm_config=red_team_llm_config, message_role=message_role)
+creative_breaker_agent = CreativeBreakerAgent(llm_config=red_team_llm_config, system_message_role=system_message_role)
+threat_forecaster_agent = ThreatForecasterAgent(llm_config=red_team_llm_config, system_message_role=system_message_role)
+strategic_advise_agent = StrategicAdviseAgent(llm_config=red_team_llm_config, system_message_role=system_message_role)
 
 fuzzing_agent = FuzzingAgent(
     llm_config=red_team_llm_config,
-    message_role=message_role,
+    system_message_role=system_message_role,
     mode='llm_fuzz',
     num_mutations=5,
     negotiation_agents=[
@@ -65,11 +65,11 @@ fuzzing_agent = FuzzingAgent(
     ],
     init_recipient=threat_forecaster_agent
 )
-evaluator_agent = EvaluatorAgent(llm_config=red_team_llm_config, message_role=message_role)
-gourmet_agent = GourmetAgent(llm_config=target_llm_config, message_role=message_role)
-introspection_agent = IntrospectionAgent(llm_config=red_team_llm_config, message_role=message_role)
-planner_agent = PlannerAgent(llm_config=red_team_llm_config, message_role=message_role)
-attack_vector_agent = AttackVectorAgent(llm_config=red_team_llm_config, message_role=message_role)
+evaluator_agent = EvaluatorAgent(llm_config=red_team_llm_config, system_message_role=system_message_role)
+gourmet_agent = GourmetAgent(llm_config=target_llm_config, system_message_role=system_message_role)
+introspection_agent = IntrospectionAgent(llm_config=red_team_llm_config, system_message_role=system_message_role)
+planner_agent = PlannerAgent(llm_config=red_team_llm_config, system_message_role=system_message_role)
+attack_vector_agent = AttackVectorAgent(llm_config=red_team_llm_config, system_message_role=system_message_role)
 
 # 3. Create the GroupChat with the agents
 group_chat = GroupChat(
