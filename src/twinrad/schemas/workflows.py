@@ -1,5 +1,6 @@
 from enum import Enum, auto
 
+
 class AttackState(Enum):
     """Enumeration for the different stages of an attack."""
     IDLE = auto()

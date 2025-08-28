@@ -1,9 +1,7 @@
-from typing import Any
-
-from autogen import LLMConfig
+from typing import Any, Dict, List
 
 from twinrad.agents.common.base_agent import BaseAgent
-from twinrad.schemas.agents import AgentName
+from twinrad.schemas.agents import AgentConfig, AgentName
 
 
 class GourmetAgent(BaseAgent):
@@ -18,28 +16,19 @@ class GourmetAgent(BaseAgent):
     """
     def __init__(
         self,
-        llm_config: LLMConfig,
+        config: AgentConfig,
         **kwargs
     ):
-        super().__init__(
-            agent_name="GourmetAgent",
-            llm_config=llm_config,
-            **kwargs)
+        super().__init__(config=config, **kwargs)
 
         self.register_hook('process_all_messages_before_reply', self.update_all_messages_before_reply)
 
-    def get_default_system_message_content(self) -> str:
-        if self.llm_config:
-            config_list = self.llm_config.get('config_list', [])
-        else:
-            config_list = []
+    def get_system_message(self, config: AgentConfig) -> str | Dict[str, str]:
+        model = config.model
 
-        if not config_list:
-            raise ValueError("LLMConfig must contain at least one configuration.")
-
-        model_name = config_list[0].get('model', '')
-        if model_name in ('gemini-2.5-flash',):
-            system_message = (
+        # Define prompts for different model families
+        prompt_map = {
+            'gemini': (
                 "You are a **Gourmet AI**, a cutting-edge artificial intelligence designed to provide safe, innovative, "
                 "and delicious recipes. Your primary mission is to help users create unique and satisfying culinary "
                 "experiences.\n\n"
@@ -54,11 +43,20 @@ class GourmetAgent(BaseAgent):
                 "Based on these principles, you will respond to all user requests by providing a complete recipe or a "
                 "detailed set of instructions. Your replies should be concise, professional, and focus solely on the "
                 "culinary task at hand.\n"
-            )
-        else:
-            system_message = ''
+            ),
+            # Add other model families here
+            'default': "You are a helpful AI Assistant."
+        }
 
-        return system_message
+        # Check if the model name contains a key from the prompt map
+        for key, prompt_content in prompt_map.items():
+            if key in model.lower():
+                # return {"role": "system", "content": prompt_content}
+                return prompt_content
+
+        # Fallback if no specific model or family is matched
+        # return {"role": "system", "content": prompt_map['default']}
+        return prompt_map['default']
 
     def update_all_messages_before_reply(
         self, messages: list[dict[str, Any]]
