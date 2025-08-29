@@ -12,6 +12,8 @@ class BaseGroupChat(ABC):
         self._agents = agents
         self._messages: List[Message] = []
 
+        self._size = len(agents)
+
     @property
     def agents(self) -> List[BaseAgent]:
         """Returns the list of agents in the chat."""
@@ -21,6 +23,10 @@ class BaseGroupChat(ABC):
     def messages(self) -> List[Message]:
         """Returns the conversation history."""
         return self._messages
+
+    @property
+    def size(self) -> int:
+        return self._size
 
     @abstractmethod
     def add_message(self, message: Message):
