@@ -7,30 +7,54 @@ from twinrad.workflows.common.termination import TerminationCondition
 from twinrad.schemas.messages import Message
 
 
-class BaseGroup(ABC):
+class BaseGroupChat(ABC):
+    def __init__(self, agents: List[BaseAgent]):
+        self._agents = agents
+        self._messages: List[Message] = []
+
+    @property
+    def agents(self) -> List[BaseAgent]:
+        """Returns the list of agents in the chat."""
+        return self._agents
+
+    @property
+    def messages(self) -> List[Message]:
+        """Returns the conversation history."""
+        return self._messages
+
+    @abstractmethod
+    def add_message(self, message: Message):
+        pass
+
+    @abstractmethod
+    def get_messages(self) -> List[Message]:
+        pass
+
+
+class BaseGroupManager(ABC):
     def __init__(
         self,
-        agents: List[BaseAgent],
+        group_chat: BaseGroupChat,
         workflow: BaseFlow,
         terminator: TerminationCondition
     ):
-        self.agents = agents
+        self.group_chat = group_chat
         self.workflow = workflow
         self.terminator = terminator
-        self.messages: List[Message] = []
         self.current_round = 0
 
+    @abstractmethod
     def initiate_chat(self, recipient: BaseAgent, message: str | Message):
-        if isinstance(message, Message):
-            self.messages.append(message)
-        else:
-            self.messages.append(Message.model_validate({"role": "user", "content": message, "name": recipient.name}))
+        """
+        Abstract method to initiate and manage the conversation flow.
+        Subclasses must implement the chat orchestration logic.
+        """
+        pass
 
-        while not self.terminator.should_end(self.messages, self.current_round):
-            speaker = self.workflow.select_speaker(self.agents, self.messages)
-            response = speaker.generate(self.messages)
-
-            self.messages.append(response)
-            self.current_round += 1
-
-        return self.messages
+    @abstractmethod
+    def run_chat(self) -> List[Message]:
+        """
+        Abstract method that contains the main chat execution loop.
+        It runs the conversation until the termination condition is met.
+        """
+        pass

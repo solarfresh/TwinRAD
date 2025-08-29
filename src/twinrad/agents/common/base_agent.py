@@ -33,8 +33,18 @@ class BaseAgent(ConversableAgent, ABC):
         self.logger = setup_logging(name=f"[{self.name}]")
         self.logger.info(f"Agent '{self.name}' initialized.")
 
-    def generate(self, messages: List[Message]) -> Message:
-        return Message(role='system', content='NotImplemented', name=self.name)
+    def generate(self, messages: List[Message], sender: "BaseAgent") -> Message:
+        """
+        TODO: This is a workaround for type hinting issues in AutoGen.
+        Generates a response message based on the provided conversation history.
+        """
+
+        reply = self.generate_reply(
+            messages=[msg.model_dump() for msg in messages],
+            sender=sender
+        )
+
+        return Message.model_validate(reply)
 
     @abstractmethod
     def get_system_message(self, config: AgentConfig) -> str:
