@@ -1,13 +1,16 @@
-from typing import Literal, Optional
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, NonNegativeInt
+
+from twinrad.schemas.messages import Message
 
 
 class LLMRequest(BaseModel):
     """A standardized schema for all model inference requests."""
-    model_name: str
-    prompt: str
     max_tokens: NonNegativeInt = 256
+    messages: List[Message]
+    model: str
+    system_message: str = 'You are a helpful AI Assistant.'
     temperature: float = 0.7
     top_p: float = 0.95
 
