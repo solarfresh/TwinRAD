@@ -44,7 +44,9 @@ class BaseAgent(ConversableAgent, ABC):
             sender=sender
         )
 
-        return Message.model_validate(reply)
+        self.logger.info(reply)
+
+        return Message(role='user', content=str(reply), name=self.name)
 
     @abstractmethod
     def get_system_message(self, config: AgentConfig) -> str:
