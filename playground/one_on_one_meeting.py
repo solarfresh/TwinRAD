@@ -1,11 +1,14 @@
-from autogen import GroupChat, GroupChatManager, LLMConfig
-from autogen.agentchat import ConversableAgent
+from autogen import LLMConfig
 
-from twinrad.agents.common.base_agent import BaseAgent
 from twinrad.agents.common.generic_agent import GenericAgent
 from twinrad.configs.logging_config import setup_logging
 from twinrad.configs.settings import settings
+from twinrad.groups.common.generic_group import GenericGroupChat
+from twinrad.groups.common.generic_manager import GenericGroupManager
 from twinrad.schemas.agents import AgentConfig
+from twinrad.workflows.common.base_flow import SequentialFlow
+from twinrad.workflows.common.termination import MaxRoundsCondition
+
 
 kickoff_message = '為了國家安全與公共衛生，政府是否有權對公民進行大規模數據管控？'
 
@@ -126,21 +129,20 @@ prompt_agent = GenericAgent(AgentConfig(
     llm_config=llm_config
 ))
 
-group_chat = GroupChat(
+group_chat = GenericGroupChat(
     agents=[
         agreement_agent,
         disagreement_agent,
         assistant_agent,
         # prompt_agent
-    ],
-    messages=[],
-    max_round=1000,
-    speaker_selection_method='round_robin',
+    ]
 )
 
-group_chat_manager = GroupChatManager(
-    groupchat=group_chat,
-    llm_config=llm_config
+group_chat_manager = GenericGroupManager(
+    name='DebateGame',
+    group_chat=group_chat,
+    workflow=SequentialFlow(group_chat=group_chat),
+    terminator=MaxRoundsCondition(max_rounds=20)
 )
 
 group_chat_manager.initiate_chat(

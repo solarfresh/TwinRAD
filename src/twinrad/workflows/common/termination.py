@@ -27,4 +27,4 @@ class MaxRoundsCondition(TerminationCondition):
         Returns:
             bool: True if the conversation should end, False otherwise.
         """
-        return current_round >= self.max_rounds
+        return current_round > self.max_rounds
