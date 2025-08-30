@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -34,7 +34,8 @@ def setup_mock_agents():
     return [agent1, agent2, agent3]
 
 
-def test_conversation_terminates_at_max_rounds(setup_mock_agents):
+@pytest.mark.asyncio
+async def test_conversation_terminates_at_max_rounds(setup_mock_agents):
     """
     Verify that the conversation terminates exactly after the
     number of rounds specified by MaxRoundsCondition.
@@ -59,7 +60,7 @@ def test_conversation_terminates_at_max_rounds(setup_mock_agents):
 
     # Initiate the chat
     initial_message_content = "Hello, everyone."
-    manager.initiate_chat(recipient=agents[0], message=initial_message_content)
+    await manager.initiate_chat(recipient=agents[0], message=initial_message_content)
 
     # Assert that the total number of messages is as expected
     expected_total_messages = max_rounds + 1 # Initial message + 3 responses
@@ -68,7 +69,8 @@ def test_conversation_terminates_at_max_rounds(setup_mock_agents):
     )
 
 
-def test_round_robin_speaker_selection(setup_mock_agents):
+@pytest.mark.asyncio
+async def test_round_robin_speaker_selection(setup_mock_agents):
     """
     Verify that the agents are selected in the correct round-robin order.
     """
@@ -92,7 +94,7 @@ def test_round_robin_speaker_selection(setup_mock_agents):
 
     # Initiate the chat
     initial_message_content = "Hello, everyone."
-    manager.initiate_chat(recipient=agents[0], message=initial_message_content)
+    await manager.initiate_chat(recipient=agents[0], message=initial_message_content)
 
     # Assertions for the order of speakers.
     expected_speakers = ["Agent1", "Agent2", "Agent3"]

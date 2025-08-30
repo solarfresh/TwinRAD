@@ -16,7 +16,7 @@ class BaseAgent(ABC):
     The agent's specific behavior should be defined in subclasses by implementing their
     role within an AutoGen GroupChat or other conversational flows.
     """
-    def __init__(self, config: AgentConfig):
+    def __init__(self, config: AgentConfig, client_manager: ClientManager):
 
         if config.system_message is not None:
             self.system_message = config.system_message
@@ -24,7 +24,7 @@ class BaseAgent(ABC):
             self.system_message = self.get_system_message(config)
 
         self.config = config
-        self.client_manager = ClientManager(config=self.config.client)
+        self.client_manager = client_manager
         self.logger = setup_logging(name=f"[{self.name}]")
         self.logger.info(f"Agent '{self.name}' initialized.")
 
@@ -36,14 +36,14 @@ class BaseAgent(ABC):
     def name(self) -> str:
         return self.config.name
 
-    def generate(self, messages: List[Message]) -> Message:
+    async def generate(self, messages: List[Message]) -> Message:
 
         request = LLMRequest(
             model=self.model,
             messages=messages,
             system_message=self.system_message,
         )
-        response: LLMResponse = self.client_manager.generate(request)
+        response: LLMResponse = await self.client_manager.generate(request)
 
         return Message(role='user', content=response.text, name=self.name)
 

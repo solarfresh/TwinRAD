@@ -1,15 +1,11 @@
 from enum import Enum
-from typing import Dict
 
 from pydantic import BaseModel
-
-from twinrad.schemas.clients import ClientConfig, ModelConfig
 
 
 class AgentConfig(BaseModel):
     name: str
     model: str
-    client: ClientConfig
     system_message: str
 
 

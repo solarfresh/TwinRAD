@@ -1,8 +1,12 @@
+import asyncio
+from asyncio import Future, Queue, Task
 from typing import Dict
+
 from twinrad.clients.handlers.base_handler import BaseHandler
 from twinrad.clients.handlers.gemini_handler import GeminiHandler
 from twinrad.clients.handlers.openai_handler import OpenAIHandler
-from twinrad.schemas.clients import LLMRequest, LLMResponse, ClientConfig
+from twinrad.configs.logging_config import setup_logging
+from twinrad.schemas.clients import ClientConfig, LLMRequest, LLMResponse
 
 
 class ClientManager:
@@ -13,8 +17,13 @@ class ClientManager:
 
     def __init__(self, config: ClientConfig):
         self.config = config
+        self.logger = setup_logging(name=f"[{self.__class__.__name__}]")
         self.handlers: Dict[str, BaseHandler] = {}
+        self.request_queue: Queue = Queue()
+        self.dispatcher_task: Task | None = None
+
         self._instantiate_handlers()
+        self._start_dispatcher()
 
     def _instantiate_handlers(self):
         """
@@ -31,24 +40,67 @@ class ClientManager:
                 self.handlers[model_config.name] = OpenAIHandler(config=model_config)
             # Add other handlers (e.g., VllmHandler) here as they are implemented
 
-    def generate(self, request: LLMRequest) -> LLMResponse:
+    async def _dispatch_requests(self):
+        """Dispatches requests from the queue to the correct handler."""
+        while True:
+            # Wait for a new request
+            request, future = await self.request_queue.get()
+
+            try:
+                # Find the correct handler and process the request
+                handler = self.handlers.get(request.model)
+                if handler:
+                    response = await handler.generate(request)
+                    future.set_result(response)
+                    self.logger.info(f"Dispatched request for model {request.model}.")
+                else:
+                    error_msg = f"Handler for model '{request.model}' not found. Check your configuration."
+                    self.logger.error(error_msg)
+                    future.set_exception(ValueError(error_msg))
+            except Exception as e:
+                self.logger.error(f"Error processing request: {e}")
+                future.set_exception(RuntimeError(f"Error processing request for model {request.model}: {e}"))
+            finally:
+                self.request_queue.task_done()
+
+    def _start_dispatcher(self):
+        """Starts a single background task to dispatch requests."""
+        if self.dispatcher_task is None or self.dispatcher_task.done():
+            self.dispatcher_task = asyncio.create_task(self._dispatch_requests())
+            self.logger.info("ClientManager dispatcher started.")
+
+    async def generate(self, request: LLMRequest) -> LLMResponse:
         """
-        Validates agent permissions and generates a response using the correct handler.
+        Submits a request to the queue and waits for the response.
 
-        Args:
-            agent_id (str): The ID of the agent making the request.
-            request (LLMRequest): The standardized request to be processed.
-
-        Returns:
-            LLMResponse: The standardized response from the LLM.
-
-        Raises:
-            ValueError: If the requested model is not configured.
+        This method acts as a producer, adding the request to the queue and
+        then awaiting a Future object which will be completed by the dispatcher.
         """
-        # Get the correct handler
-        handler = self.handlers.get(request.model)
-        if not handler:
-            raise ValueError(f"Handler for model '{request.model}' not found. Check your configuration.")
+        # Create a Future to hold the result of the request
+        future = Future()
 
-        # Route the request to the handler
-        return handler.generate(request)
+        # Put the request and the future object into the queue
+        await self.request_queue.put((request, future))
+
+        # Wait for the result to be set by the dispatcher
+        return await future
+
+    async def start(self):
+        """Starts the background dispatcher task."""
+        if not self.dispatcher_task or self.dispatcher_task.done():
+            self.dispatcher_task = asyncio.create_task(self._dispatch_requests())
+            self.logger.info("ClientManager dispatcher task started.")
+
+    async def stop(self):
+        """
+        Gracefully stops the background dispatcher task.
+        Waits for the queue to be empty before cancelling the task.
+        """
+        if self.dispatcher_task and not self.dispatcher_task.done():
+            self.logger.warning("Stopping ClientManager dispatcher...")
+            await self.request_queue.join()  # Wait for all pending requests to be processed
+            self.dispatcher_task.cancel()
+            try:
+                await self.dispatcher_task  # Await the task to ensure it's cancelled
+            except asyncio.CancelledError:
+                self.logger.error("ClientManager dispatcher stopped.")

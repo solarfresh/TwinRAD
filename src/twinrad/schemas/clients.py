@@ -6,7 +6,17 @@ from twinrad.schemas.messages import Message
 
 
 class LLMRequest(BaseModel):
-    """A standardized schema for all model inference requests."""
+    """
+    A standardized schema for all model inference requests.
+
+    Attributes:
+    max_tokens (NonNegativeInt): The maximum number of tokens to generate.
+    messages (List[Message]): A list of messages forming the conversation history.
+    model (str): The name of the model to use for generation.
+    system_message (str): The system message to set the behavior of the assistant.
+    temperature (float): The sampling temperature.
+    top_p (float): The nucleus sampling parameter.
+    """
     max_tokens: NonNegativeInt = 4096
     messages: List[Message]
     model: str
@@ -21,12 +31,24 @@ class LLMResponse(BaseModel):
 
 
 class ModelConfig(BaseModel):
-    """Defines the configuration for a single model or API."""
+    """
+    Defines the configuration for a single model or API.
+
+    Attributes:
+    name (str): The unique name of the model or API.
+    mode (Literal): The mode of the model, e.g., "gemini", "generic_api", "openai", "vllm".
+    base_url (Optional[str]): The base URL for the API, if applicable.
+    api_key (Optional[str]): The API key for authentication, if applicable.
+    path (Optional[str]): The local path to the model, if applicable.
+    tensor_parallel_size (int): The tensor parallel size for distributed models.
+    """
     name: str
     mode: Literal["gemini", "generic_api", "openai", "vllm"] = "generic_api"
-    path: Optional[str] = None
     base_url: Optional[str] = None
     api_key: Optional[str] = None
+
+    path: Optional[str] = None
+    tensor_parallel_size: int = 0
 
 
 class ClientConfig(BaseModel):
