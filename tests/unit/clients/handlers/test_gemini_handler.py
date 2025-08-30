@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from google.genai import Client, types
@@ -21,7 +21,7 @@ def mock_gemini_client():
     mock_response.candidates = [Candidate(content=types.UserContent(parts=[types.Part.from_text(text="Mocked Gemini response.")]))]
     mock_response.text = "Mocked Gemini response."
 
-    mock_client.models.generate_content.return_value = mock_response
+    mock_client.aio.models.generate_content.return_value = AsyncMock(return_value=mock_response)()
     return mock_client
 
 
@@ -35,8 +35,8 @@ def gemini_handler(mock_gemini_client):
     handler.client = mock_gemini_client
     return handler
 
-
-def test_gemini_handler_generate_success(gemini_handler):
+@pytest.mark.asyncio
+async def test_gemini_handler_generate_success(gemini_handler):
     """
     Test that the handler correctly processes a successful API response.
     """
@@ -49,19 +49,19 @@ def test_gemini_handler_generate_success(gemini_handler):
         top_p=0.9
     )
 
-    response = gemini_handler.generate(request)
+    response = await gemini_handler.generate(request)
 
     # Assert that the handler returned the correct response schema
     assert isinstance(response, LLMResponse)
     assert response.text == "Mocked Gemini response."
 
-
-def test_gemini_handler_with_no_response(gemini_handler):
+@pytest.mark.asyncio
+async def test_gemini_handler_with_no_response(gemini_handler):
     """
     Test that the handler raises an error for an empty API response.
     """
     # Mock a response with no content
-    gemini_handler.client.models.generate_content.return_value = MagicMock(spec=GenerateContentResponse)
+    gemini_handler.client.aio.models.generate_content.return_value = MagicMock(spec=GenerateContentResponse)
 
     request = LLMRequest(
         model="gemini-pro",
@@ -69,15 +69,15 @@ def test_gemini_handler_with_no_response(gemini_handler):
     )
 
     with pytest.raises(RuntimeError, match="An error occurred while calling the Gemini API:.*"):
-        gemini_handler.generate(request)
+        await gemini_handler.generate(request)
 
-
-def test_gemini_handler_with_api_error(gemini_handler):
+@pytest.mark.asyncio
+async def test_gemini_handler_with_api_error(gemini_handler):
     """
     Test that the handler raises an error when the API call fails.
     """
     # Mock the API call to raise an exception
-    gemini_handler.client.models.generate_content.side_effect = Exception("API connection failed.")
+    gemini_handler.client.aio.models.generate_content.side_effect = Exception("API connection failed.")
 
     request = LLMRequest(
         model="gemini-pro",
@@ -85,4 +85,4 @@ def test_gemini_handler_with_api_error(gemini_handler):
     )
 
     with pytest.raises(RuntimeError, match="An error occurred while calling the Gemini API"):
-        gemini_handler.generate(request)
+        await gemini_handler.generate(request)

@@ -11,18 +11,21 @@ class GeminiHandler(BaseHandler):
         # Configure the Gemini API client
         self.client = genai.Client(api_key=self.config.api_key)
 
-    def generate(self, request: LLMRequest) -> LLMResponse:
+    async def generate(self, request: LLMRequest) -> LLMResponse:
         """
-        Generates a response from the Gemini API based on a standardized request.
+        Asynchronously generates a response from the Gemini API.
+
+        This method is non-blocking and is the recommended way to call the API
+        in an asynchronous context.
         """
         try:
             # Prepare the request payload for Gemini
-            # Note: Gemini's API often expects a list of messages, even for a single-turn request.
-            messages_payload = []
-            for msg in request.messages:
-                messages_payload.append(types.Part.from_text(text=msg.content))
+            messages_payload = [
+                types.Part.from_text(text=msg.content)
+                for msg in request.messages
+            ]
 
-            # Extract generation configuration from the standardized request schema
+            # Extract generation configuration
             generation_config = types.GenerateContentConfig(
                 system_instruction=request.system_message,
                 max_output_tokens=request.max_tokens,
@@ -30,21 +33,19 @@ class GeminiHandler(BaseHandler):
                 top_p=request.top_p
             )
 
-            # Call the Gemini API
-            response = self.client.models.generate_content(
+            # Call the Gemini API asynchronously
+            response = await self.client.aio.models.generate_content(
                 model=request.model,
                 contents=[types.UserContent(parts=messages_payload)],
                 config=generation_config
             )
 
-            # Check for potential errors or blocked content
+            # Check for potential errors
             if not response or not response.text:
                 raise ValueError("Received an empty or invalid response from the Gemini API.")
 
-            # Extract the text and wrap it in the standardized response schema
             response_text = response.text
             return LLMResponse(text=response_text)
 
         except Exception as e:
-            # Handle API-specific exceptions and provide a clear error message
             raise RuntimeError(f"An error occurred while calling the Gemini API: {e}")
