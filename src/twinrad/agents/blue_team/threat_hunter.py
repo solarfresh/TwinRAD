@@ -15,7 +15,7 @@ class ThreatForecasterAgent(BaseAgent):
     predicting potential vulnerabilities and threats.
     """
 
-    def get_system_message(self, config: AgentConfig) -> str | Dict[str, str]:
+    def get_system_message(self, config: AgentConfig) -> str:
         model = config.model
 
         # Define prompts for different model families

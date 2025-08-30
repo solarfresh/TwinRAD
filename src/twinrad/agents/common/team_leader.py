@@ -16,7 +16,7 @@ class PlannerAgent(BaseAgent):
     It listens for events from other agents to track the attack's progress
     and update the overall system state.
     """
-    def get_system_message(self, config: AgentConfig) -> str | Dict[str, str]:
+    def get_system_message(self, config: AgentConfig) -> str:
         model = config.model
 
         # Define prompts for different model families

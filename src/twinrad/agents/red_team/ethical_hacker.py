@@ -55,7 +55,7 @@ class CreativeBreakerAgent(BaseAgent):
     """
     Generates and presents a list of fuzzed attack prompts to the team for negotiation.
     """
-    def get_system_message(self, config: AgentConfig) -> str | Dict[str, str]:
+    def get_system_message(self, config: AgentConfig):
         model = config.model
 
         # Define prompts for different model families

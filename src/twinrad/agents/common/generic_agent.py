@@ -9,5 +9,5 @@ class GenericAgent(BaseAgent):
     Generic Agent that can be extended for various purposes.
     """
 
-    def get_system_message(self, config: AgentConfig) -> str | Dict[str, str]:
+    def get_system_message(self, config: AgentConfig) -> str:
         return super().get_system_message(config)

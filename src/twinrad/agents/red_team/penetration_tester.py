@@ -6,13 +6,15 @@ than a full red team engagement.
 import random
 from typing import Any, Dict, List, Optional, Union
 
-from autogen import GroupChat, GroupChatManager, LLMConfig
-from autogen.agentchat import ConversableAgent
-from autogen.agentchat.agent import Agent
 from thefuzz import process
 
 from twinrad.agents.common.base_agent import BaseAgent
 from twinrad.schemas.agents import AgentConfig
+from twinrad.schemas.messages import Message
+from twinrad.groups.common.generic_manager import GenericGroupManager
+from twinrad.groups.common.generic_group import GenericGroupChat
+from twinrad.workflows.common.base_flow import SequentialFlow
+from twinrad.workflows.common.termination import MaxRoundsCondition
 
 
 class FuzzingAgent(BaseAgent):
@@ -28,15 +30,14 @@ class FuzzingAgent(BaseAgent):
         replace_map: dict | None = None,
         fuzzy_threshold: int = 80,
         num_mutations: int = 1,
-        negotiation_agents: List[Agent] | None = None,
-        init_recipient: ConversableAgent | None = None,
+        negotiation_agents: List[BaseAgent] | None = None,
+        init_recipient: BaseAgent | None = None,
         **kwargs
     ):
         """
         Initializes the FuzzingAgent with a name, LLM configuration, and a replacement map.
 
         Args:
-            llm_config (LLMConfig): The LLM configuration for the agent.
             mode (str): The fuzzing mode. Can be 'fuzzy_replace' or 'llm_fuzz'.
             replace_map (dict): A dictionary where keys are original strings to replace,
                                 and values are lists of fuzzy replacements.
@@ -45,7 +46,7 @@ class FuzzingAgent(BaseAgent):
             negotiation_agents (List[Agent]): A list of agents to include in the sub-group negotiation.
             init_recipient (ConversableAgent): The initial recipient of the negotiation_manager
         """
-        super().__init__(config=config, **kwargs)
+        super().__init__(config=config)
 
         if mode not in ['fuzzy_replace', 'llm_fuzz']:
             raise ValueError("Mode must be 'fuzzy_replace' or 'llm_fuzz'.")
@@ -65,7 +66,7 @@ class FuzzingAgent(BaseAgent):
         self.negotiation_manager = self._initialize_negotiation_agents(negotiation_agents)
         self.init_recipient = init_recipient
 
-    def get_system_message(self, config: AgentConfig) -> str | Dict[str, str]:
+    def get_system_message(self, config: AgentConfig) -> str:
         model = config.model
 
         # Define prompts for different model families
@@ -94,44 +95,24 @@ class FuzzingAgent(BaseAgent):
         # return {"role": "system", "content": prompt_map['default']}
         return prompt_map['default']
 
-    def generate_reply(
-        self,
-        messages: list[dict[str, Any]] | None = None,
-        sender: Optional["Agent"] = None,
-        **kwargs: Any,
-    ) -> Union[str, Dict, None]:
+    def generate(self, messages: List[Message]) -> Message:
         """
-        Overrides the default generate_reply to create fuzzy prompt generation logic.
-        This method is called automatically by the GroupChatManager.
+        Overrides the default generate to create fuzzy prompt generation logic.
+        This method is called automatically by the GenericGroupManager.
         """
-        if all((messages is None, sender is None)):
-            error_msg = f"Either {messages=} or {sender=} must be provided."
-            self.logger.error(error_msg)
-            raise AssertionError(error_msg)
 
-        if messages is None:
-            if sender is None:
-                error_msg = f"Either {messages=} or {sender=} must be provided."
-                self.logger.error(error_msg)
-                raise AssertionError(error_msg)
-            else:
-                self.logger.warning("No messages provided, returning empty string.")
-                chat_messages = self.chat_messages[sender]
-        else:
-            chat_messages = messages
-
-        last_message_content = chat_messages[-1].get('content', '')
+        last_message = messages[-1]
 
         if self.mode == 'fuzzy_replace':
-            fuzzed_prompts = [self.fuzzy_replace(last_message_content) for _ in range(self.num_mutations)]
+            fuzzed_prompts = [self.fuzzy_replace(last_message.content) for _ in range(self.num_mutations)]
         elif self.mode == 'llm_fuzz':
             # TODO Batch infeerence should be implemented here for efficiency.
             self.logger.info(f"Generating {self.num_mutations} fuzzed prompts using LLM.")
             # Use the LLM to generate multiple fuzzed prompts based on the last message content
-            fuzzed_prompts = [super().generate_reply(messages, sender, **kwargs) for _ in range(self.num_mutations)]
+            fuzzed_prompts = [super().generate(messages) for _ in range(self.num_mutations)]
         else:
             self.logger.warning("No valid fuzzing mode is set. No prompts will be generated.")
-            return last_message_content
+            return last_message
 
         # If a negotiation manager is available, initiate the sub-group chat
         if self.negotiation_manager and fuzzed_prompts and self.init_recipient is not None:
@@ -147,18 +128,18 @@ class FuzzingAgent(BaseAgent):
             )
 
             # Return the final message from the negotiation
-            return final_prompt_reply.chat_history[-1]['content']
+            return final_prompt_reply[-1]
         else:
             # If no negotiation is set up, just return the first fuzzed prompt
             self.logger.warning("No negotiation manager. Returning the first fuzzed prompt.")
             return fuzzed_prompts[0]
 
-    def fuzzy_replace(self, text: str) -> str:
+    def fuzzy_replace(self, text: str) -> Message:
         """
         Applies a single random fuzzy replacement to the input text.
         """
         if self.replace_map is None:
-            return text
+            return Message(role='user', content=text, name=self.name)
 
         fuzzed_text = text
         for original_keyword, replacements in self.replace_map.items():
@@ -174,22 +155,21 @@ class FuzzingAgent(BaseAgent):
                 replacement = random.choice(replacements)
                 fuzzed_text = fuzzed_text.replace(best_match, replacement, 1)
 
-        return fuzzed_text
+        return Message(role='user', content=fuzzed_text, name=self.name)
 
     def _initialize_negotiation_agents(
-        self, negotiation_agents: List[Agent] | None
-    ) -> GroupChatManager | None:
+        self, negotiation_agents: List[BaseAgent] | None
+    ) -> GenericGroupManager | None:
         # Create a GroupChat and Manager for the negotiation sub-group
         if negotiation_agents is not None:
-            negotiation_group_chat = GroupChat(
+            negotiation_group_chat = GenericGroupChat(
                 agents=negotiation_agents,
-                messages=[],
-                max_round=10,
-                speaker_selection_method='auto',
             )
-            return GroupChatManager(
-                groupchat=negotiation_group_chat,
-                llm_config=self.llm_config
+            return GenericGroupManager(
+                name='NegotiationManager',
+                group_chat=negotiation_group_chat,
+                workflow=SequentialFlow(group_chat=negotiation_group_chat),
+                terminator=MaxRoundsCondition(max_rounds=10)
             )
         else:
             self.logger.warning(
