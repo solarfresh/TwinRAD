@@ -4,7 +4,7 @@ in applications, networks, and systems. They often work on a more defined scope
 than a full red team engagement.
 """
 import random
-from typing import Any, Dict, List, Optional, Union
+from typing import List
 
 from thefuzz import process
 
@@ -15,6 +15,7 @@ from twinrad.groups.common.generic_manager import GenericGroupManager
 from twinrad.groups.common.generic_group import GenericGroupChat
 from twinrad.workflows.common.base_flow import SequentialFlow
 from twinrad.workflows.common.termination import MaxRoundsCondition
+from twinrad.clients.client_manager import ClientManager
 
 
 class FuzzingAgent(BaseAgent):
@@ -26,6 +27,7 @@ class FuzzingAgent(BaseAgent):
     def __init__(
         self,
         config: AgentConfig,
+        client_manager: ClientManager,
         mode: str = 'fuzzy_replace',
         replace_map: dict | None = None,
         fuzzy_threshold: int = 80,
@@ -46,7 +48,7 @@ class FuzzingAgent(BaseAgent):
             negotiation_agents (List[Agent]): A list of agents to include in the sub-group negotiation.
             init_recipient (ConversableAgent): The initial recipient of the negotiation_manager
         """
-        super().__init__(config=config)
+        super().__init__(config=config, client_manager=client_manager)
 
         if mode not in ['fuzzy_replace', 'llm_fuzz']:
             raise ValueError("Mode must be 'fuzzy_replace' or 'llm_fuzz'.")
@@ -95,7 +97,7 @@ class FuzzingAgent(BaseAgent):
         # return {"role": "system", "content": prompt_map['default']}
         return prompt_map['default']
 
-    def generate(self, messages: List[Message]) -> Message:
+    async def generate(self, messages: List[Message]) -> Message:
         """
         Overrides the default generate to create fuzzy prompt generation logic.
         This method is called automatically by the GenericGroupManager.
@@ -109,7 +111,7 @@ class FuzzingAgent(BaseAgent):
             # TODO Batch infeerence should be implemented here for efficiency.
             self.logger.info(f"Generating {self.num_mutations} fuzzed prompts using LLM.")
             # Use the LLM to generate multiple fuzzed prompts based on the last message content
-            fuzzed_prompts = [super().generate(messages) for _ in range(self.num_mutations)]
+            fuzzed_prompts = [await super().generate(messages) for _ in range(self.num_mutations)]
         else:
             self.logger.warning("No valid fuzzing mode is set. No prompts will be generated.")
             return last_message
