@@ -1,23 +1,16 @@
 from enum import Enum
-from typing import Any, Dict, List
+from typing import Dict
 
-from autogen.llm_config import LLMConfig
 from pydantic import BaseModel
+
+from twinrad.schemas.clients import ClientConfig, ModelConfig
 
 
 class AgentConfig(BaseModel):
     name: str
-    llm_config: LLMConfig | Dict[str, Any] | None
-    system_message: Dict[str, str] | None = None
-
-    @property
-    def model(self) -> str:
-        config_list = self.llm_config.get("config_list", []) if self.llm_config else []
-        # Assumes the first model in the config_list is the primary one
-        return config_list[0].get("model", '') if config_list else ""
-
-    class Config:
-        arbitrary_types_allowed = True
+    model: str
+    client: ClientConfig
+    system_message: str
 
 
 class AgentName(Enum):

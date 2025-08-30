@@ -7,7 +7,7 @@ from twinrad.schemas.messages import Message
 
 class GenericGroupManager(BaseGroupManager):
 
-    def initiate_chat(self, recipient: BaseAgent, message: str | Message):
+    def initiate_chat(self, recipient: BaseAgent, message: str | Message) -> List[Message]:
         """Initiates and manages the conversation flow."""
         self.logger.debug(f'recipient: {recipient}')
         self.logger.debug(f'recipient.name: {recipient.name}')
@@ -39,7 +39,9 @@ class GenericGroupManager(BaseGroupManager):
             )
 
             # 2. Get a response from the speaker
-            response = speaker.generate(self.group_chat.messages, sender=speaker)
+            response = speaker.generate(self.group_chat.messages)
+
+            self.logger.info(f"[{speaker.name}] {response.content}")
 
             # 3. Add the response to the history
             self.group_chat.add_message(response)

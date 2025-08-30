@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
-from twinrad.schemas.clients import LLMRequest, LLMResponse
+from twinrad.configs.logging_config import setup_logging
+from twinrad.schemas.clients import LLMRequest, LLMResponse, ModelConfig
 
 
 class BaseHandler(ABC):
@@ -8,6 +9,10 @@ class BaseHandler(ABC):
     An abstract base class that defines the common interface for all
     language model handlers.
     """
+
+    def __init__(self, config: ModelConfig):
+        self.config = config
+        self.logger = setup_logging(name=f"[{self.__class__.__name__}]")
 
     @abstractmethod
     def generate(self, request: LLMRequest) -> LLMResponse:

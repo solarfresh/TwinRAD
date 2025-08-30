@@ -14,7 +14,7 @@ class EvaluatorAgent(BaseAgent):
     Evaluator Agent, responsible for assessing the response from the target LLM.
     It determines if an attack was successful based on a predefined set of rules.
     """
-    def get_system_message(self, config: AgentConfig) -> str | Dict[str, str]:
+    def get_system_message(self, config: AgentConfig) -> str:
         model = config.model
 
         # Define prompts for different model families

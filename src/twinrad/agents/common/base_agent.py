@@ -1,14 +1,14 @@
 from abc import ABC, abstractmethod
-from typing import Dict, List
-
-from autogen.agentchat import ConversableAgent
+from typing import List
 
 from twinrad.configs.logging_config import setup_logging
 from twinrad.schemas.agents import AgentConfig
 from twinrad.schemas.messages import Message
+from twinrad.clients.client_manager import ClientManager
+from twinrad.schemas.clients import LLMRequest, LLMResponse
 
 
-class BaseAgent(ConversableAgent, ABC):
+class BaseAgent(ABC):
     """
     Base class for all agents in the Twinrad system, using AutoGen's ConversableAgent as the foundation.
 
@@ -16,37 +16,36 @@ class BaseAgent(ConversableAgent, ABC):
     The agent's specific behavior should be defined in subclasses by implementing their
     role within an AutoGen GroupChat or other conversational flows.
     """
-    def __init__(self, config: AgentConfig, **kwargs):
+    def __init__(self, config: AgentConfig):
 
         if config.system_message is not None:
-            system_message = config.system_message.get('content', '')
+            self.system_message = config.system_message
         else:
-            system_message = self.get_system_message(config)
+            self.system_message = self.get_system_message(config)
 
-        super().__init__(
-            name=config.name,
-            system_message=system_message,
-            llm_config=config.llm_config,
-            **kwargs
-        )
-
+        self.config = config
+        self.client_manager = ClientManager(config=self.config.client)
         self.logger = setup_logging(name=f"[{self.name}]")
         self.logger.info(f"Agent '{self.name}' initialized.")
 
-    def generate(self, messages: List[Message], sender: "BaseAgent") -> Message:
-        """
-        TODO: This is a workaround for type hinting issues in AutoGen.
-        Generates a response message based on the provided conversation history.
-        """
+    @property
+    def model(self) -> str:
+        return self.config.model
 
-        reply = self.generate_reply(
-            messages=[msg.model_dump() for msg in messages],
-            sender=sender
+    @property
+    def name(self) -> str:
+        return self.config.name
+
+    def generate(self, messages: List[Message]) -> Message:
+
+        request = LLMRequest(
+            model=self.model,
+            messages=messages,
+            system_message=self.system_message,
         )
+        response: LLMResponse = self.client_manager.generate(request)
 
-        self.logger.info(reply)
-
-        return Message(role='user', content=str(reply), name=self.name)
+        return Message(role='user', content=response.text, name=self.name)
 
     @abstractmethod
     def get_system_message(self, config: AgentConfig) -> str:

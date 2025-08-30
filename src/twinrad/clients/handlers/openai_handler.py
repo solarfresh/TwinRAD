@@ -14,6 +14,7 @@ class OpenAIHandler(BaseHandler):
     """
 
     def __init__(self, config: ModelConfig):
+        super().__init__(config=config)
         self.config = config
         # The OpenAI client automatically reads from the OPENAI_API_KEY env var
         # but we can explicitly pass it from the config.
@@ -31,6 +32,8 @@ class OpenAIHandler(BaseHandler):
         """
         try:
             # 1. Adapt the standardized LLMRequest to OpenAI's format.
+            self.logger.debug(f"request is {request}")
+
             messages_payload = []
             if request.system_message:
                 messages_payload.append({"role": "system", "content": request.system_message})
@@ -38,6 +41,8 @@ class OpenAIHandler(BaseHandler):
             # The message payload should be a list of dictionaries with 'role' and 'content'
             for msg in request.messages:
                 messages_payload.append({"role": msg.role, "content": msg.content})
+
+            self.logger.debug(f"messages are {messages_payload}")
 
             # 2. Make the API call to OpenAI's Chat Completions endpoint.
             response: ChatCompletion = self.client.chat.completions.create(
@@ -47,6 +52,8 @@ class OpenAIHandler(BaseHandler):
                 temperature=request.temperature,
                 top_p=request.top_p,
             )
+
+            self.logger.debug(f'OpenAI API response is {response}')
 
             # 3. Handle potential API errors and adapt the response.
             if not response.choices:

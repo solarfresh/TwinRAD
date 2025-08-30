@@ -7,7 +7,7 @@ from twinrad.schemas.messages import Message
 
 class LLMRequest(BaseModel):
     """A standardized schema for all model inference requests."""
-    max_tokens: NonNegativeInt = 256
+    max_tokens: NonNegativeInt = 4096
     messages: List[Message]
     model: str
     system_message: str = 'You are a helpful AI Assistant.'
