@@ -6,11 +6,10 @@ from twinrad.schemas.clients import LLMRequest, LLMResponse, ModelConfig
 
 
 class GeminiHandler(BaseHandler):
-    def __init__(self, config: ModelConfig, api_key: str):
+    def __init__(self, config: ModelConfig):
         self.config = config
-        self.api_key = api_key
         # Configure the Gemini API client
-        self.client = genai.Client(api_key=self.api_key)
+        self.client = genai.Client(api_key=self.config.api_key)
 
     def generate(self, request: LLMRequest) -> LLMResponse:
         """

@@ -25,5 +25,5 @@ class ModelConfig(BaseModel):
     name: str
     mode: Literal["vllm", "openai", "generic_api"] = "generic_api"
     path: Optional[str] = None
-    url: Optional[str] = None
+    base_url: Optional[str] = None
     api_key: Optional[str] = None

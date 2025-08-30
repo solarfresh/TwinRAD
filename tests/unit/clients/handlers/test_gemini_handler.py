@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, PropertyMock
+from unittest.mock import MagicMock
 
 import pytest
 from google.genai import Client, types
@@ -30,8 +30,8 @@ def gemini_handler(mock_gemini_client):
     """
     Fixture to create a GeminiHandler instance with a mocked client.
     """
-    config = ModelConfig(name="gemini-pro")
-    handler = GeminiHandler(config=config, api_key="dummy_api_key")
+    config = ModelConfig(name="gemini-pro", api_key="dummy_api_key")
+    handler = GeminiHandler(config=config)
     handler.client = mock_gemini_client
     return handler
 
