@@ -39,13 +39,16 @@ class ModelConfig(BaseModel):
     mode (Literal): The mode of the model, e.g., "gemini", "generic_api", "openai", "vllm".
     base_url (Optional[str]): The base URL for the API, if applicable.
     api_key (Optional[str]): The API key for authentication, if applicable.
-    path (Optional[str]): The local path to the model, if applicable.
+    restrict_user_assistant_alternate (bool): Whether to restrict messages to only user and assistant roles.
     tensor_parallel_size (int): The tensor parallel size for distributed models.
+    device (str): The device to run the model on, e.g., "cpu", "cuda", "auto".
+    dtype (str): The data type for model computations, e.g., "float32", "float16", "bfloat16", "auto".
     """
     name: str
     mode: Literal["gemini", "generic_api", "openai", "vllm"] = "generic_api"
     base_url: Optional[str] = None
     api_key: Optional[str] = None
+    restrict_user_assistant_alternate: bool = False
 
     tensor_parallel_size: int = 1
     device: str = 'auto'

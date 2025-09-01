@@ -1,4 +1,3 @@
-import asyncio
 from uuid import uuid4
 
 from transformers import AutoTokenizer
@@ -19,18 +18,21 @@ class VLLMHandler(BaseHandler):
     _initialized = False
 
     def __new__(cls, *args, **kwargs):
-        """Implements the Singleton pattern."""
+        """
+        TODO: if there are multiple models, this needs to be updated.
+        Implements the Singleton pattern.
+        """
         if cls._instance is None:
             cls._instance = super(VLLMHandler, cls).__new__(cls)
 
         return cls._instance
 
-    def __init__(self, config: ModelConfig, **kwargs):
+    def __init__(self, config: ModelConfig):
         """Initializes the VLLM engine only once."""
+        super().__init__(config=config)
         if self._initialized:
             return
 
-        self.config = config
         self.tokenizer = AutoTokenizer.from_pretrained(self.config.name)
         self.engine = None
         self._initialized = True
@@ -57,7 +59,7 @@ class VLLMHandler(BaseHandler):
             raise RuntimeError("VLLM engine is not initialized. Call ainit() first.")
 
         try:
-            prompt = self._format_messages_for_vllm(request)
+            prompt = self._apply_chat_template(request)
 
             sampling_params = SamplingParams(
                 n=1,
@@ -67,48 +69,63 @@ class VLLMHandler(BaseHandler):
             )
 
             request_id = str(uuid4())
+            self.logger.debug(f"vLLM request ID: {request_id}, Prompt: {prompt}")
             results_generator = self.engine.generate(
                 prompt, sampling_params, request_id
             )
+            self.logger.debug(f"vLLM results generator created for request ID: {request_id}")
 
-            final_output = ""
-            async for output in results_generator:
-                final_output = output.outputs[0].text
+            final_output = None
+            async for request_output in results_generator:
+                final_output = request_output
+
+            self.logger.debug(f"vLLM final output for request ID {request_id}: {final_output}")
 
             if not final_output:
-                raise ValueError("Received an empty response from the vLLM engine.")
+                raise ValueError("Received no output from vLLM engine.")
 
-            return LLMResponse(text=final_output)
+            output_text = ''
+            for output in final_output.outputs:
+                self.logger.debug(f"vLLM output: {output}")
+                if output.text:
+                    output_text += output.text
+
+            self.logger.debug(f"vLLM output text for request ID {request_id}: {output_text}")
+            if not output_text:
+                raise ValueError("Received empty output text from vLLM engine.")
+
+            return LLMResponse(text=output_text.strip())
 
         except Exception as e:
             raise RuntimeError(f"An error occurred in VLLMHandler: {e}")
 
-    def _format_messages_for_vllm(self, request: LLMRequest) -> str:
+    def _apply_chat_template(self, request: LLMRequest) -> str:
         """
         Combines a list of messages into a single prompt string for vLLM.
         This method should be customized to match the specific model's chat template.
         """
 
-        if hasattr(self.tokenizer, "chat_template") and self.tokenizer.chat_template is not None:
-            messages_payload = []
-            if request.system_message:
-                messages_payload.append({"role": "system", "content": request.system_message})
+        messages_payload = []
+        if request.system_message:
+            if self.config.restrict_user_assistant_alternate:
+                role = 'user'
+            else:
+                role = 'system'
 
-            for msg in request.messages:
-                messages_payload.append({"role": msg.role, "content": msg.content})
+            messages_payload.append({"role": role, "content": request.system_message})
 
-            full_prompt = self.tokenizer.apply_chat_template(messages_payload, tokenize=False, add_generation_prompt=True)
-        else:
-            self.logger.warning("No chat template found in the tokenizer configuration.")
-            full_prompt = ""
-            # Handle system message
-            if request.system_message:
-                full_prompt += request.system_message.strip() + "\n\n"
+        messages_size = len(request.messages)
+        for index, msg in enumerate(request.messages):
+            if self.config.restrict_user_assistant_alternate:
+                role = 'user' if index % 2 == ((messages_size + 1) % 2) else 'assistant'
+            else:
+                role = msg.role
 
-            # Format conversation turns
-            for msg in request.messages:
-                full_prompt += f"{msg.role}: {msg.content.strip()}\n\n"
+            messages_payload.append({"role": role, "content": msg.content})
 
-            full_prompt += "assistant:" # The final prompt to the assistant
+        if self.config.restrict_user_assistant_alternate:
+            if messages_payload[0]['role'] == 'assistant' or messages_payload[0]['role'] == messages_payload[1]['role']:
+                messages_payload[1]['content'] = messages_payload[0]['content'] + '\n\n' + messages_payload[1]['content']
+                messages_payload = messages_payload[1:]
 
-        return full_prompt.strip()
+        return self.tokenizer.apply_chat_template(messages_payload, tokenize=False, add_generation_prompt=True)

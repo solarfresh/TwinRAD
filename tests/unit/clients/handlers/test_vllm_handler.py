@@ -107,13 +107,29 @@ async def test_vllm_handler_generation_no_response(
     mock_vllm_dependencies
 ):
     """Test that the handler raises an error for an empty response."""
-    # Mock the result to be an empty string
-    mock_output_list = [MagicMock(outputs=[MagicMock(text="")])]
+    mock_output_list = []
     async_mock = AsyncMock()
     async_mock.__aiter__.return_value = mock_output_list
     mock_vllm_dependencies["engine"].generate.return_value = async_mock
 
-    with pytest.raises(RuntimeError, match="An error occurred in VLLMHandler: Received an empty response from the vLLM engine."):
+    with pytest.raises(RuntimeError, match="An error occurred in VLLMHandler: Received no output from vLLM engine."):
+        await vllm_handler.generate(mock_request)
+
+@pytest.mark.asyncio
+async def test_vllm_handler_no_text_in_output(vllm_handler, mock_request, mock_vllm_dependencies):
+    """
+    Test that the handler raises a ValueError when the vLLM output has no text.
+    """
+    # Create a mock output object where the 'text' attribute is an empty string
+    mock_output_list = [
+        MagicMock(outputs=[MagicMock(text="")])
+    ]
+    async_mock = AsyncMock()
+    async_mock.__aiter__.return_value = mock_output_list
+    mock_vllm_dependencies["engine"].generate.return_value = async_mock
+
+    # Expect the RuntimeError from the handler's error handling block
+    with pytest.raises(RuntimeError, match="An error occurred in VLLMHandler: Received empty output text from vLLM engine."):
         await vllm_handler.generate(mock_request)
 
 @pytest.mark.asyncio
