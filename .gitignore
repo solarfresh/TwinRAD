@@ -1,6 +1,7 @@
 # Application-specific files
 # Ignore the following files and directories that are specific to the application
 .vscode/
+playground/storage
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -1,8 +1,8 @@
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import httpx
 import pytest
-from openai import APIError, OpenAI
+from openai import APIError, AsyncOpenAI
 from openai.types.chat.chat_completion import ChatCompletion, Choice
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
 from openai.types.completion_usage import CompletionUsage
@@ -18,9 +18,13 @@ def mock_openai_client():
     Mocks the OpenAI API client and its chat.completions.create method
     to prevent real API calls.
     """
-    mock_client = MagicMock(spec=OpenAI)
+    mock_client = MagicMock(spec=AsyncOpenAI)
+    return mock_client
+
+@pytest.fixture
+def mock_openai_response():
     # Mock the return value of chat.completions.create()
-    mock_client.chat.completions.create.return_value = ChatCompletion(
+    mock_response = ChatCompletion(
         id="chatcmpl-123",
         choices=[
             Choice(
@@ -39,7 +43,8 @@ def mock_openai_client():
         system_fingerprint="fp_44709d6fcb",
         usage=CompletionUsage(completion_tokens=10, prompt_tokens=10, total_tokens=20)
     )
-    return mock_client
+
+    return mock_response
 
 @pytest.fixture
 def openai_handler(mock_openai_client):
@@ -51,7 +56,8 @@ def openai_handler(mock_openai_client):
     handler.client = mock_openai_client
     return handler
 
-def test_openai_handler_generate_success(openai_handler):
+@pytest.mark.asyncio
+async def test_openai_handler_generate_success(openai_handler, mock_openai_response):
     """
     Test that the handler correctly processes a successful API response.
     """
@@ -64,14 +70,16 @@ def test_openai_handler_generate_success(openai_handler):
         top_p=0.9
     )
 
+    openai_handler.client.chat.completions.create.return_value = AsyncMock(return_value=mock_openai_response)()
     # Call the handler's generate method
-    response = openai_handler.generate(request)
+    response = await openai_handler.generate(request)
 
     # Assert that the handler returned the correct response schema and content
     assert isinstance(response, LLMResponse)
     assert response.text == "Mocked OpenAI response."
 
-def test_openai_handler_empty_response(openai_handler, mock_openai_client):
+@pytest.mark.asyncio
+async def test_openai_handler_empty_response(openai_handler, mock_openai_client):
     """
     Test that the handler raises a ValueError for an empty API response.
     """
@@ -92,9 +100,10 @@ def test_openai_handler_empty_response(openai_handler, mock_openai_client):
     )
 
     with pytest.raises(RuntimeError, match="An unexpected error occurred in OpenAIHandler:.*"):
-        openai_handler.generate(request)
+       await openai_handler.generate(request)
 
-def test_openai_handler_api_error(openai_handler, mock_openai_client):
+@pytest.mark.asyncio
+async def test_openai_handler_api_error(openai_handler, mock_openai_client):
     """
     Test that the handler correctly catches and re-raises API-specific errors.
     """
@@ -107,4 +116,4 @@ def test_openai_handler_api_error(openai_handler, mock_openai_client):
     )
 
     with pytest.raises(RuntimeError, match="An OpenAI API error occurred:.*"):
-        openai_handler.generate(request)
+        await openai_handler.generate(request)

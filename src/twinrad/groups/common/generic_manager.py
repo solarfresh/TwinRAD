@@ -7,7 +7,7 @@ from twinrad.schemas.messages import Message
 
 class GenericGroupManager(BaseGroupManager):
 
-    def initiate_chat(self, recipient: BaseAgent, message: str | Message) -> List[Message]:
+    async def initiate_chat(self, recipient: BaseAgent, message: str | Message) -> List[Message]:
         """Initiates and manages the conversation flow."""
         self.logger.debug(f'recipient: {recipient}')
         self.logger.debug(f'recipient.name: {recipient.name}')
@@ -26,9 +26,9 @@ class GenericGroupManager(BaseGroupManager):
         self.current_round = 1
 
         # 2. Start the main chat loop
-        return self.run_chat()
+        return await self.run_chat()
 
-    def run_chat(self) -> List[Message]:
+    async def run_chat(self) -> List[Message]:
         """
         Runs the main chat execution loop until the termination condition is met.
         """
@@ -39,7 +39,7 @@ class GenericGroupManager(BaseGroupManager):
             )
 
             # 2. Get a response from the speaker
-            response = speaker.generate(self.group_chat.messages)
+            response = await speaker.generate(self.group_chat.messages)
 
             self.logger.info(f"[{speaker.name}] {response.content}")
 
