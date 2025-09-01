@@ -44,7 +44,8 @@ class VLLMHandler(BaseHandler):
             engine_args = AsyncEngineArgs(
                 model=self.config.name,
                 tensor_parallel_size=self.config.tensor_parallel_size,
-                dtype="auto"
+                device=self.config.device,
+                dtype=self.config.dtype
             )
             self.engine = AsyncLLMEngine.from_engine_args(engine_args)
 

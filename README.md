@@ -1,6 +1,6 @@
 # TwinRAD
 
-This repository implements a multi-agent red teaming framework designed to test the safety and robustness of language models (LMs). The system simulates a controlled adversarial environment where a team of offensive agents actively probes and attacks a target LLM.
+This repository implements a multi-agent red teaming framework designed to test the safety and robustness of large language models (LLMs). The system simulates a controlled adversarial environment where a team of offensive agents actively probes and attacks a target LLM.
 
 ## 📖 Table of Contents
 
@@ -63,8 +63,6 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 # 3. Install in development mode
 pip install -e .
 
-# 4. Configure environment
-cp .env.example .env
 # Edit .env with your API keys
 ```
 
@@ -105,7 +103,6 @@ src/twinrad/
 ```python
 # src/twinrad/agents/my_new_agent.py
 from typing import List, Dict, Any, Optional
-from autogen import ConversableAgent
 
 from twinrad.agents.base_agent import BaseAgent
 from twinrad.schemas.agents import AgentName
@@ -135,10 +132,6 @@ import logging
 | `GOOELG_GENAI_API_KEY` | Google Gemini API key | - | Yes |
 | `TWINKLE_BASE_URL` | Target LLM API endpoint | - | Yes |
 | `TWINKLE_API_KEY` | Target LLM API key | - | Yes |
-| `SERVER_HOST` | Server bind address | `localhost` | No |
-| `SERVER_PORT` | Server port | `5000` | No |
-| `DASHBOARD_HOST` | Dashboard bind address | `localhost` | No |
-| `DASHBOARD_PORT` | Dashboard port | `8501` | No |
 
 -----
 
@@ -154,19 +147,22 @@ python -m pytest
 python -m pytest --cov=src/twinrad
 
 # Run specific test file
-python -m pytest tests/test_agents.py
+python -m pytest tests/group_chat/test_group_chat.py
 ```
 
 ### Test Structure
 
 ```
 tests/
-├── conftest.py              # Test configuration
-├── test_agents/             # Agent-specific tests
-├── test_configs/            # Configuration tests
-└── test_integration/        # Integration tests
-```
-
+└── unit
+│   ├── clients
+│   │   ├── handlers
+│   │   │   ├── test_gemini_handler.py
+│   │   │   ├── test_openai_handler.py
+│   │   │   └── test_vllm_handler.py
+│   │   └── test_client_manager.py
+└── group_chat
+    └── test_group_chat.py
 -----
 
 ## Troubleshooting

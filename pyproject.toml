@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "twinrad"
-version = "0.1.0"
+version = "0.2.0"
 description = "A multi-agent red teaming framework for testing LLM safety and robustness"
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -18,7 +18,6 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Security",
 ]

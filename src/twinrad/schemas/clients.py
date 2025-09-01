@@ -47,8 +47,9 @@ class ModelConfig(BaseModel):
     base_url: Optional[str] = None
     api_key: Optional[str] = None
 
-    path: Optional[str] = None
-    tensor_parallel_size: int = 0
+    tensor_parallel_size: int = 1
+    device: str = 'auto'
+    dtype: str = 'auto'
 
 
 class ClientConfig(BaseModel):
