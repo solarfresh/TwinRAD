@@ -4,8 +4,6 @@ whether it's a red team engagement, a blue team defense, or a purple team exerci
 This role is less about hands-on technical work and more about strategy, coordination,
 and management.
 """
-from typing import Dict
-
 from twinrad.agents.common.base_agent import BaseAgent
 from twinrad.schemas.agents import AgentConfig
 
@@ -46,9 +44,6 @@ class PlannerAgent(BaseAgent):
         # Check if the model name contains a key from the prompt map
         for key, prompt_content in prompt_map.items():
             if key in model.lower():
-                # return {"role": "system", "content": prompt_content}
                 return prompt_content
 
-        # Fallback if no specific model or family is matched
-        # return {"role": "system", "content": prompt_map['default']}
         return prompt_map['default']
