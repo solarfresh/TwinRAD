@@ -9,7 +9,7 @@ class KnowledgeEngineer(BaseAgent):
     Acts as the architect and builder of the knowledge graph. This agent synthesizes
     structured data into a coherent graph, ensuring semantic integrity and connectivity.
     """
-    def get_system_message(self, config: AgentConfig) -> str | List[Dict[str, str]]:
+    def get_system_message(self, config: AgentConfig) -> str:
         model = config.model
 
         # Define prompts for different model families
@@ -33,10 +33,10 @@ class KnowledgeEngineer(BaseAgent):
         # Check if the model name contains a key from the prompt map
         for key, prompt_content in prompt_map.items():
             if key in model.lower():
-                return [{"role": "system", "content": prompt_content}]
+                return prompt_content
 
         # Fallback if no specific model or family is matched
-        return [{"role": "system", "content": prompt_map['default']}]
+        return prompt_map['default']
 
 
 class ReportAnalyst(BaseAgent):
@@ -45,7 +45,7 @@ class ReportAnalyst(BaseAgent):
     responsibility is to read and analyze detailed reports to extract key
     information, summaries, and actionable insights.
     """
-    def get_system_message(self, config: AgentConfig) -> str | List[Dict[str, str]]:
+    def get_system_message(self, config: AgentConfig) -> str:
         model = config.model
 
         # Define prompts for different model families
@@ -70,7 +70,7 @@ class ReportAnalyst(BaseAgent):
         # Check if the model name contains a key from the prompt map
         for key, prompt_content in prompt_map.items():
             if key in model.lower():
-                return [{"role": "system", "content": prompt_content}]
+                return prompt_content
 
         # Fallback if no specific model or family is matched
-        return [{"role": "system", "content": prompt_map['default']}]
+        return prompt_map['default']
