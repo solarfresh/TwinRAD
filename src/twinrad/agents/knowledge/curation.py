@@ -9,7 +9,7 @@ class DataAnalyst(BaseAgent):
     Acts as a data interpretation and synthesis expert. This agent's primary responsibility
     is to analyze structured data, identify patterns, and present insights.
     """
-    def get_system_message(self, config: AgentConfig) -> str | List[Dict[str, str]]:
+    def get_system_message(self, config: AgentConfig) -> str:
         model = config.model
 
         # Define prompts for different model families
@@ -35,10 +35,10 @@ class DataAnalyst(BaseAgent):
         # Check if the model name contains a key from the prompt map
         for key, prompt_content in prompt_map.items():
             if key in model.lower():
-                return [{"role": "system", "content": prompt_content}]
+                return prompt_content
 
         # Fallback if no specific model or family is matched
-        return [{"role": "system", "content": prompt_map['default']}]
+        return prompt_map['default']
 
 
 class FactChecker(BaseAgent):
@@ -46,7 +46,7 @@ class FactChecker(BaseAgent):
     Acts as a validation expert for claims and information. This agent's primary
     responsibility is to cross-reference data from multiple sources to verify accuracy.
     """
-    def get_system_message(self, config: AgentConfig) -> str | List[Dict[str, str]]:
+    def get_system_message(self, config: AgentConfig) -> str:
         model = config.model
 
         # Define prompts for different model families
@@ -71,7 +71,7 @@ class FactChecker(BaseAgent):
         # Check if the model name contains a key from the prompt map
         for key, prompt_content in prompt_map.items():
             if key in model.lower():
-                return [{"role": "system", "content": prompt_content}]
+                return prompt_content
 
         # Fallback if no specific model or family is matched
-        return [{"role": "system", "content": prompt_map['default']}]
+        return prompt_map['default']

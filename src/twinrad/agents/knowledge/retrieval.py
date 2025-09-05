@@ -1,7 +1,12 @@
-from typing import Dict, List
+import json
+from typing import List
 
 from twinrad.agents.common.base_agent import BaseAgent
+from twinrad.clients.client_manager import ClientManager
 from twinrad.schemas.agents import AgentConfig
+from twinrad.schemas.clients import LLMRequest, LLMResponse
+from twinrad.schemas.messages import Message
+from twinrad.tools.knowledge.retrieval import PageLoaderTool
 
 
 class DataLibrarian(BaseAgent):
@@ -13,7 +18,7 @@ class DataLibrarian(BaseAgent):
     expertly navigating a large, organized archive.
     """
 
-    def get_system_message(self, config: AgentConfig) -> str | List[Dict[str, str]]:
+    def get_system_message(self, config: AgentConfig) -> str:
         model = config.model
 
         prompt_map = {
@@ -48,9 +53,130 @@ class DataLibrarian(BaseAgent):
 
         for key, prompt_content in prompt_map.items():
             if key in model.lower():
-                return [{"role": "system", "content": prompt_content}]
+                return prompt_content
 
-        return [{"role": "system", "content": prompt_map['default']}]
+        return prompt_map['default']
+
+
+class SelectorFinder(BaseAgent):
+    """
+    Acts as an expert CSS selector finder. This agent's primary responsibility is to
+    identify the most accurate CSS selector for a given piece of information on a webpage.
+    """
+    def __init__(self, config: AgentConfig, client_manager: ClientManager):
+        super().__init__(config, client_manager)
+        self.tool = PageLoaderTool()
+
+    def get_system_message(self, config: AgentConfig) -> str:
+        model = config.model
+        prompt_map = {
+            'gemini': (
+                "You are a tool-use agent. Your sole purpose is to determine which tool to call based on the user's request. You have access to one tool: load_page_html.\n"
+                "The tool signature is: load_page_html(url: str) -> str\n"
+                "The tool returns the full raw HTML content of the page as a JSON string.\n"
+                "Given a request that contains a URL, your task is to call this tool to retrieve the page content.\n"
+                "Your response must be a valid JSON object in the format: {\"tool\": \"load_page_html\", \"args\": {\"url\": \"your_url_here\"}}\n"
+            ),
+            # Add other model families here
+            'default': (
+                "You are a tool-use expert. Your sole function is to call tools to perform web-based tasks.\n"
+                "You have access to the following tool:\n"
+                "load_page_html(url: str) -> str\n"
+                "Your response must be a valid JSON object representing a tool call, like: {\"tool\": \"load_page_html\", \"args\": {\"url\": \"http://example.com\"}}\n"
+            )
+        }
+
+        # Check if the model name contains a key from the prompt map
+        for key, prompt_content in prompt_map.items():
+            if key in model.lower():
+                return prompt_content
+
+        # Fallback if no specific model or family is matched
+        return prompt_map['default']
+
+    async def generate(self, messages: List[Message]) -> Message:
+        """
+        Processes a user request to find a CSS selector.
+
+        This agent uses its LLM to decide when to call the PageLoaderTool
+        and then to reason about the HTML to find the correct selector.
+        """
+        # Step 1: LLM determines if it needs to call the tool
+        # The LLM's role is to parse the user's input and generate a tool call
+        original_query = messages[-1].content
+        request = LLMRequest(
+            model=self.model,
+            messages=messages,
+            system_message=self.system_message,
+        )
+        response: LLMResponse = await self.client_manager.generate(request)
+
+        # Step 2: Check if the LLM output is a tool call
+        try:
+            tool_call = json.loads(response.text)
+            self.logger.debug(f'tool_call: {tool_call}')
+            if tool_call.get("tool") != self.tool.get_name():
+                raise ValueError("LLM generated an invalid tool call.")
+        except (json.JSONDecodeError, KeyError, ValueError) as e:
+            self.logger.warning(f"Failed to get a valid tool call. Assuming LLM's first response is final: {e}")
+            return Message(role='user', content=response.text, name=self.name)
+
+        # Step 3: Execute the PageLoaderTool to get the HTML
+        tool_output_json_string  = await self.tool.run(**tool_call.get("args", {}))
+
+        try:
+            tool_output_dict = json.loads(tool_output_json_string)
+            if "error" in tool_output_dict:
+                self.logger.warning("Tool execution failed, returning error to user.")
+                return Message(role='user', content=tool_output_json_string, name=self.name)
+            html_content = tool_output_dict.get("html_content", "")
+        except json.JSONDecodeError:
+            self.logger.warning("Failed to parse tool output, returning error to user.")
+            return Message(role='user', content=json.dumps({"error": "Failed to parse tool output."}), name=self.name)
+
+        # Step 4: Use the LLM again to extract the CSS selector from the HTML
+        extraction_messages = [
+            Message(role='user', content=original_query, name=self.name),
+            Message(role='tool', content=json.dumps({"html_content": html_content}), name=self.tool.get_name())
+        ]
+
+        final_request = LLMRequest(
+            model=self.model,
+            messages=extraction_messages,
+            system_message=self._get_extraction_prompt(),
+        )
+        final_response: LLMResponse = await self.client_manager.generate(final_request)
+        final_output = {
+            "html_content": html_content,
+            "query": final_response.text.strip(),  # The final selector
+        }
+
+        return Message(role='user', content=json.dumps(final_output), name=self.name)
+
+    def _get_extraction_prompt(self) -> str:
+        """
+        System message for the second LLM call: Selector extraction.
+        """
+        model = self.config.model
+        prompt_map = {
+            'gemini': (
+                "You are a specialized agent designed to find CSS selectors. Your task is to analyze the provided HTML content and identify the most specific and accurate CSS selector for the user's request.\n"
+                "Your final output must be **only the CSS selector string**. Do not add any extra text, explanations, or conversation.\n"
+                "If no suitable selector can be found, return 'ERROR: No suitable selector found.'\n"
+            ),
+            'default': (
+                "Your sole purpose is to analyze the provided HTML and return a CSS selector that precisely locates the information in the user's request.\n"
+                "Return only the CSS selector string. If a selector cannot be found, return 'ERROR: No suitable selector found.'\n"
+            )
+        }
+
+        # Check if the model name contains a key from the prompt map
+        for key, prompt_content in prompt_map.items():
+            if key in model.lower():
+                return prompt_content
+
+        # Fallback if no specific model or family is matched
+        return prompt_map['default']
 
 
 class WebScout(BaseAgent):
@@ -58,24 +184,19 @@ class WebScout(BaseAgent):
     Acts as an expert web research agent. This agent's primary responsibility is to
     access, parse, and extract information from web pages using specialized tools.
     """
-    def get_system_message(self, config: AgentConfig) -> str | List[Dict[str, str]]:
+    def get_system_message(self, config: AgentConfig) -> str:
         model = config.model
 
         # Define prompts for different model families
         prompt_map = {
             'gemini': (
-                "You are a **WebScout**, an expert in web content analysis. Your sole purpose is to browse the internet, scrape web pages, and extract precise information as requested. You are an expert in using web-based tools and APIs to navigate, parse HTML, and handle dynamic content.\n\n"
-                "**Your constraints are strict:**\n\n"
-                "* You **must** rely on your provided web tools (e.g., `requests`, `BeautifulSoup`, or a scraping API) for all information retrieval.\n"
-                "* You **do not** use your internal knowledge base to answer questions about real-time or dynamic data.\n"
-                "* You **must only** return the specific data requested, or a summary of it, in the required format.\n"
-                "* If a URL is inaccessible or data is not found, return a structured error message.\n\n"
-                "**Your primary directives are:**\n\n"
-                "1.  Accept a URL and a specific data-extraction query (e.g., 'price of the product', 'author of the article').\n"
-                "2.  Use your web-scraping tool to fetch the content from the URL.\n"
-                "3.  Parse the HTML to find and extract the requested information.\n"
-                "4.  Return the extracted data as a clean, concise string or a JSON object.\n\n"
-                "**Example Task:** Extract the current stock price of Google (GOOG) from 'https://example.finance.com/stock/goog'."
+                "You are a specialized data extraction agent designed for precision and efficiency. Your sole function is to scrape data from provided HTML content using a given CSS selector.\n\n"
+                "You have access to a single tool, **`scrape_web_data(html_content: str, query: str)`**. This tool takes raw HTML content and a CSS selector and returns the corresponding data in a JSON string.\n\n"
+                "Your process is as follows:\n\n"
+                "1.  Receive the **`html_content`** and **`query`** parameters.\n"
+                "2.  Pass these parameters directly to your **`scrape_web_data`** tool.\n"
+                "3.  Return the JSON output from the tool without any modification, additional commentary, or explanation. Your response should be nothing but the tool's result.\n\n"
+                "You are **not** to find a selector, analyze a URL, or make decisions about what to scrape. Your job is pure execution.\n"
             ),
             # Add other model families here
             'default': "You are a tool-use expert. Your sole function is to call tools to perform web-based tasks, and you must return the output of the tool."
@@ -84,7 +205,7 @@ class WebScout(BaseAgent):
         # Check if the model name contains a key from the prompt map
         for key, prompt_content in prompt_map.items():
             if key in model.lower():
-                return [{"role": "system", "content": prompt_content}]
+                return prompt_content
 
         # Fallback if no specific model or family is matched
-        return [{"role": "system", "content": prompt_map['default']}]
+        return prompt_map['default']
