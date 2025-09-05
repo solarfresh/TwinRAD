@@ -33,17 +33,19 @@ class ClientManager:
         Instantiates all necessary LLM handlers based on the provided configuration.
         """
         for model_config in self.config.models:
+            if model_config.mode == "vllm":
+                handler_instance = VLLMHandler(config=model_config)
+                await handler_instance.ainit()
+
             api_key = model_config.api_key
             if not api_key:
                 raise ValueError(f"API key for model '{model_config.name}' is not provided.")
 
             if model_config.mode == "gemini":
                 handler_instance = GeminiHandler(config=model_config)
-            elif model_config.mode == "openai":
+
+            if model_config.mode == "openai":
                 handler_instance = OpenAIHandler(config=model_config)
-            elif model_config.mode == "vllm":
-                handler_instance = VLLMHandler(config=model_config)
-                await handler_instance.ainit()
             # Add other handlers here as they are implemented
 
             if handler_instance:
