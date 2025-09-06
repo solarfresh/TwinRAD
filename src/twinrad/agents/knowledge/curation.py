@@ -46,11 +46,8 @@ class FactChecker(BaseAgent):
     Acts as a validation expert for claims and information. This agent's primary
     responsibility is to cross-reference data from multiple sources to verify accuracy.
     """
-    def get_system_message(self, config: AgentConfig) -> str:
-        model = config.model
-
-        # Define prompts for different model families
-        prompt_map = {
+    def get_system_message_map(self) -> Dict[str, str]:
+        return {
             'gemini': (
                 "You are a **Fact Checker**, an expert in verifying information. Your sole purpose is to analyze claims and determine their veracity. You must be impartial, evidence-based, and precise. You will be provided with claims and access to tools for data retrieval. Your output must be a clear verdict supported by evidence.\n\n"
                 "**Your constraints are strict:**\n\n"
@@ -67,11 +64,3 @@ class FactChecker(BaseAgent):
             ),
             'default': "You are a tool-use expert for information validation. You will receive claims and must use your tools to find evidence to support or refute them, and then provide a conclusive verdict."
         }
-
-        # Check if the model name contains a key from the prompt map
-        for key, prompt_content in prompt_map.items():
-            if key in model.lower():
-                return prompt_content
-
-        # Fallback if no specific model or family is matched
-        return prompt_map['default']

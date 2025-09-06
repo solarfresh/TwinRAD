@@ -28,6 +28,7 @@ dependencies = [
     "playwright==1.55.0",
     "pydantic==2.11.7",
     "pydantic-settings==2.10.1",
+    "thefuzz==0.22.1",
     "torch==2.6.0",
     "transformers==4.56.0",
     "vllm==0.8.3"

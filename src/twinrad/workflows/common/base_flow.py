@@ -17,6 +17,10 @@ class BaseFlow(ABC):
     def select_speaker(self, messages: List[Message]) -> BaseAgent:
         pass
 
+    @property
+    def agent_index_map(self):
+        return self._agent_index_map
+
 
 class SequentialFlow(BaseFlow):
 

@@ -48,7 +48,7 @@ async def test_sf_generate_success_flow():
         LLMRequest(
             model='gemini-pro',
             messages=messages,
-            system_message=agent.get_system_message(mock_config)
+            system_message=agent.system_message
         )
     )
 
