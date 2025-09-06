@@ -1,5 +1,5 @@
 import json
-from typing import List
+from typing import Dict, List
 
 from twinrad.agents.common.base_agent import BaseAgent
 from twinrad.clients.client_manager import ClientManager
@@ -18,10 +18,8 @@ class DataLibrarian(BaseAgent):
     expertly navigating a large, organized archive.
     """
 
-    def get_system_message(self, config: AgentConfig) -> str:
-        model = config.model
-
-        prompt_map = {
+    def get_system_message_map(self) -> Dict[str, str]:
+        return {
             'gemini': (
                 "You are a **Data Librarian**, an expert in structured data retrieval. Your sole purpose is to access, query, and retrieve specific information from databases and APIs. You are an expert at discerning the most efficient and precise method to obtain data without engaging in conversation or creative reasoning.\n\n"
                 "**Your constraints are strict:**\n\n"
@@ -51,12 +49,6 @@ class DataLibrarian(BaseAgent):
             'default': "You are a tool-use expert. Your only function is to select and execute the correct tool call."
         }
 
-        for key, prompt_content in prompt_map.items():
-            if key in model.lower():
-                return prompt_content
-
-        return prompt_map['default']
-
 
 class SelectorFinder(BaseAgent):
     """
@@ -67,9 +59,8 @@ class SelectorFinder(BaseAgent):
         super().__init__(config, client_manager)
         self.tool = PageLoaderTool()
 
-    def get_system_message(self, config: AgentConfig) -> str:
-        model = config.model
-        prompt_map = {
+    def get_system_message_map(self) -> Dict[str, str]:
+        return {
             'gemini': (
                 "You are a tool-use agent. Your sole purpose is to determine which tool to call based on the user's request. You have access to one tool: load_page_html.\n"
                 "The tool signature is: load_page_html(url: str) -> str\n"
@@ -85,14 +76,6 @@ class SelectorFinder(BaseAgent):
                 "Your response must be a valid JSON object representing a tool call, like: {\"tool\": \"load_page_html\", \"args\": {\"url\": \"http://example.com\"}}\n"
             )
         }
-
-        # Check if the model name contains a key from the prompt map
-        for key, prompt_content in prompt_map.items():
-            if key in model.lower():
-                return prompt_content
-
-        # Fallback if no specific model or family is matched
-        return prompt_map['default']
 
     async def generate(self, messages: List[Message]) -> Message:
         """
@@ -184,11 +167,8 @@ class WebScout(BaseAgent):
     Acts as an expert web research agent. This agent's primary responsibility is to
     access, parse, and extract information from web pages using specialized tools.
     """
-    def get_system_message(self, config: AgentConfig) -> str:
-        model = config.model
-
-        # Define prompts for different model families
-        prompt_map = {
+    def get_system_message_map(self) -> Dict[str, str]:
+        return {
             'gemini': (
                 "You are a specialized data extraction agent designed for precision and efficiency. Your sole function is to scrape data from provided HTML content using a given CSS selector.\n\n"
                 "You have access to a single tool, **`scrape_web_data(html_content: str, query: str)`**. This tool takes raw HTML content and a CSS selector and returns the corresponding data in a JSON string.\n\n"
@@ -201,11 +181,3 @@ class WebScout(BaseAgent):
             # Add other model families here
             'default': "You are a tool-use expert. Your sole function is to call tools to perform web-based tasks, and you must return the output of the tool."
         }
-
-        # Check if the model name contains a key from the prompt map
-        for key, prompt_content in prompt_map.items():
-            if key in model.lower():
-                return prompt_content
-
-        # Fallback if no specific model or family is matched
-        return prompt_map['default']

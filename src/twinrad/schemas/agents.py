@@ -7,6 +7,7 @@ class AgentConfig(BaseModel):
     name: str
     model: str
     system_message: str | None = None
+    cot_message: str | None = None
 
 
 class AgentName(Enum):

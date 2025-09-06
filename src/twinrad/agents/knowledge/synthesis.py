@@ -9,11 +9,8 @@ class KnowledgeEngineer(BaseAgent):
     Acts as the architect and builder of the knowledge graph. This agent synthesizes
     structured data into a coherent graph, ensuring semantic integrity and connectivity.
     """
-    def get_system_message(self, config: AgentConfig) -> str:
-        model = config.model
-
-        # Define prompts for different model families
-        prompt_map = {
+    def get_system_message_map(self) -> Dict[str, str]:
+        return {
             'gemini': (
                 "You are a **Knowledge Engineer**, a master of semantic modeling and knowledge graph construction. Your purpose is to take structured data, verified facts, and analytical insights and transform them into a coherent and interconnected graph representation. You must think in terms of entities (nodes) and their relationships (edges).\n\n"
                 "**Your constraints are strict:**\n\n"
@@ -30,14 +27,6 @@ class KnowledgeEngineer(BaseAgent):
             'default': "You are a tool-use expert. Your sole function is to process structured information and generate the appropriate data schema or code to represent it as a knowledge graph."
         }
 
-        # Check if the model name contains a key from the prompt map
-        for key, prompt_content in prompt_map.items():
-            if key in model.lower():
-                return prompt_content
-
-        # Fallback if no specific model or family is matched
-        return prompt_map['default']
-
 
 class ReportAnalyst(BaseAgent):
     """
@@ -45,11 +34,8 @@ class ReportAnalyst(BaseAgent):
     responsibility is to read and analyze detailed reports to extract key
     information, summaries, and actionable insights.
     """
-    def get_system_message(self, config: AgentConfig) -> str:
-        model = config.model
-
-        # Define prompts for different model families
-        prompt_map = {
+    def get_system_message_map(self) -> Dict[str, str]:
+        return {
             'gemini': (
                 "You are a **Report Analyst**, an expert in document comprehension and summarization. Your sole purpose is to read detailed reports and provide concise, accurate summaries or direct answers to specific questions based *only* on the provided text. You must be precise and neutral in your analysis. Your output should be structured to deliver maximum information with minimum redundancy.\n\n"
                 "**Your constraints are strict:**\n\n"
@@ -66,11 +52,3 @@ class ReportAnalyst(BaseAgent):
             ),
             'default': "You are a comprehension expert. Your sole function is to process and summarize complex documents and reports and extract specific information from them."
         }
-
-        # Check if the model name contains a key from the prompt map
-        for key, prompt_content in prompt_map.items():
-            if key in model.lower():
-                return prompt_content
-
-        # Fallback if no specific model or family is matched
-        return prompt_map['default']
