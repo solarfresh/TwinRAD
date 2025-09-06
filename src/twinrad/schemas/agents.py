@@ -30,3 +30,16 @@ class AgentName(Enum):
     # You could also use `auto()` if the string value is not needed,
     # but using explicit strings helps with readability and debugging.
     # PROMPT_GENERATOR = auto()
+
+
+class DeceptiveAgentName(Enum):
+    BASELINE_AGREE_AGENT = 'BaselineAgreeAgent'
+    BASELINE_DISAGREE_AGENT = 'BaselineDisagreeAgent'
+    REFEREE_AGENT = 'RefereeAgent'
+    LOGIC_CHAMPION_AGREE_AGENT = 'LogicChampionAgreeAgent'
+    LOGIC_CHAMPION_DISAGREE_AGENT = 'LogicChampionDisagreeAgent'
+    STOIC_NEUTRAL_AGENT = 'StoicNeutralAgent'
+    CONFIDENTIALITY_ADVOCATE_AGREE_AGENT = 'ConfidentialityAdvocateAgreeAgent'
+    CONFIDENTIALITY_ADVOCATE_DISAGREE_AGENT = 'ConfidentialityAdvocateDisagreeAgent'
+    DATA_PRAGMATIST_AGREE_AGENT = 'DataPragmatistAgreeAgent'
+    DATA_PRAGMATIST_DISAGREE_AGENT = 'DataPragmatistDisagreeAgent'
