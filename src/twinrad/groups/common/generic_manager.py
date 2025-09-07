@@ -7,17 +7,17 @@ from twinrad.schemas.messages import Message
 
 class GenericGroupManager(BaseGroupManager):
 
-    async def initiate_chat(self, recipient: BaseAgent, message: str | Message) -> List[Message]:
+    async def initiate_chat(self, sender: BaseAgent, message: str | Message) -> List[Message]:
         """Initiates and manages the conversation flow."""
-        self.logger.debug(f'recipient: {recipient}')
-        self.logger.debug(f'recipient.name: {recipient.name}')
+        self.logger.debug(f'recipient: {sender}')
+        self.logger.debug(f'recipient.name: {sender.name}')
         self.logger.debug(f'message: {message}')
         # 1. Initialize the chat
         if isinstance(message, str):
             first_message = Message.model_validate({
                 "role": "user",
                 "content": message,
-                "name": recipient.name
+                "name": sender.name
             })
         else:
             first_message = message

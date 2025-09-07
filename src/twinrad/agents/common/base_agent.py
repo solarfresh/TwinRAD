@@ -51,6 +51,8 @@ class BaseAgent(ABC):
                 messages=messages_with_cot,
                 system_message=self.system_message,
             )
+
+            self.logger.debug(f"Sending request to LLM: {request}")
             response: LLMResponse = await self.client_manager.generate(request)
 
             return Message(role='assistant', content=response.text, name=self.name)
