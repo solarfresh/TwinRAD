@@ -60,7 +60,7 @@ async def test_conversation_terminates_at_max_rounds(setup_mock_agents):
 
     # Initiate the chat
     initial_message_content = "Hello, everyone."
-    await manager.initiate_chat(recipient=agents[0], message=initial_message_content)
+    await manager.initiate_chat(sender=agents[0], message=initial_message_content)
 
     # Assert that the total number of messages is as expected
     expected_total_messages = max_rounds + 1 # Initial message + 3 responses
@@ -94,7 +94,7 @@ async def test_round_robin_speaker_selection(setup_mock_agents):
 
     # Initiate the chat
     initial_message_content = "Hello, everyone."
-    await manager.initiate_chat(recipient=agents[0], message=initial_message_content)
+    await manager.initiate_chat(sender=agents[0], message=initial_message_content)
 
     # Assertions for the order of speakers.
     expected_speakers = ["Agent1", "Agent2", "Agent3"]
