@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
 from typing import List
 
-from twinrad.configs.logging_config import setup_logging
 from twinrad.agents.common.base_agent import BaseAgent
+from twinrad.configs.logging_config import setup_logging
 from twinrad.groups.common.base_group import BaseGroupChat
+from twinrad.schemas.groups import RoomConfig
 from twinrad.schemas.messages import Message
 from twinrad.workflows.common.base_flow import BaseFlow
 from twinrad.workflows.common.termination import TerminationCondition
@@ -41,3 +42,56 @@ class BaseGroupManager(ABC):
         It runs the conversation until the termination condition is met.
         """
         pass
+
+
+class BaseRoom(ABC):
+    group_chat: BaseGroupChat
+    terminator: TerminationCondition
+    workflow: BaseFlow
+
+    def __init__(self, config: RoomConfig) -> None:
+        self.config = config
+        self.logger = setup_logging(name=f"[{self.config.name}]")
+        self.logger.info(f"Room Manager '{self.config.name}' initialized.")
+
+    async def initiate_chat(self, message: str | Message, sender: BaseAgent | None = None) -> List[Message]:
+        """Initiates and manages the conversation flow."""
+        # 1. Initialize the chat
+        if isinstance(message, str):
+            first_message = Message.model_validate({
+                "role": "user",
+                "content": message,
+                "name": 'User' if sender is None else sender.name
+            })
+        else:
+            first_message = message
+
+        self.group_chat.add_message(first_message)
+        self.current_round = 1
+
+        # 2. Start the main chat loop
+        return await self.run_chat()
+
+    async def run_chat(self) -> List[Message]:
+        """
+        Runs the main chat execution loop until the termination condition is met.
+        """
+        while not self.terminator.should_end(self.group_chat.messages, self.current_round):
+            # 1. Select the next speaker
+            speaker = self.workflow.select_speaker(
+                messages=self.group_chat.messages
+            )
+
+            self.logger.debug(f"[{speaker.name}] is generating a response...")
+
+            # 2. Get a response from the speaker
+            response = await speaker.generate(self.group_chat.messages)
+
+            self.logger.info(f"[{speaker.name}] {response.content}")
+
+            # 3. Add the response to the history
+            self.group_chat.add_message(response)
+            self.current_round += 1
+
+        # 4. Return the final messages
+        return self.group_chat.messages
