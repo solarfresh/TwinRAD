@@ -130,6 +130,8 @@ import logging
 |----------|-------------|---------|----------|
 | `LOG_LEVEL` | Logging verbosity | `INFO` | No |
 | `GOOELG_GENAI_API_KEY` | Google Gemini API key | - | Yes |
+| `GOOGLE_SEARCH_ENGINE_API_KEY` | Google Custom Search API key | - | No |
+| `GOOGLE_SEARCH_ENGINE_ID` | Google Custom Search Engine ID | - | No |
 | `TWINKLE_BASE_URL` | Target LLM API endpoint | - | Yes |
 | `TWINKLE_API_KEY` | Target LLM API key | - | Yes |
 
