@@ -28,7 +28,7 @@ class BaseGroupManager(ABC):
         self.logger.info(f"GroupChat Manager '{self.name}' initialized.")
 
     @abstractmethod
-    def initiate_chat(self, recipient: BaseAgent, message: str | Message):
+    async def initiate_chat(self, sender: BaseAgent, message: str | Message) -> List[Message]:
         """
         Abstract method to initiate and manage the conversation flow.
         Subclasses must implement the chat orchestration logic.
@@ -36,7 +36,7 @@ class BaseGroupManager(ABC):
         pass
 
     @abstractmethod
-    def run_chat(self) -> List[Message]:
+    async def run_chat(self) -> List[Message]:
         """
         Abstract method that contains the main chat execution loop.
         It runs the conversation until the termination condition is met.
