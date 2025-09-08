@@ -1,9 +1,92 @@
 import json
-from typing import Any, Dict
+from typing import Any, Dict, List
 
+import httpx
 from playwright.async_api import async_playwright
 
+from twinrad.configs.settings import settings
 from twinrad.tools.common.base_tool import BaseTool
+
+
+class GoogleSearchTool(BaseTool):
+    """
+    A tool that performs a Google search using the official Custom Search JSON API.
+
+    API Documentation:
+        https://developers.google.com/custom-search/v1/reference/rest/v1/cse/list
+    """
+    def __init__(self):
+        super().__init__()
+        # These should be loaded from a secure configuration or environment variables
+        self.api_key = settings.google_search_engine_api_key
+        self.cx = settings.google_search_engine_id
+        self.base_url = settings.google_search_engine_base_url
+        self.client = httpx.AsyncClient()
+
+    async def run(self, **kwargs) -> Any:
+        """
+        Executes a Google search for the given query using the Custom Search API.
+
+        Args:
+            query: The search query string.
+
+        Returns:
+            A JSON string containing the search results.
+        """
+        if not self.api_key or not self.cx:
+            return json.dumps({"error": "API key or Search Engine ID (cx) is not configured."})
+
+        query = kwargs.get('query', '')
+        params = {
+            "key": self.api_key,
+            "cx": self.cx,
+            "q": query
+        }
+
+        try:
+            if not params.get('q'):
+                raise ValueError("Missing 'query' parameter.")
+
+            response = await self.client.get(self.base_url, params=params, timeout=10.0)
+            response.raise_for_status()  # Raise an exception for bad status codes
+
+            search_data = response.json()
+            items = search_data.get("items", [])
+
+            processed_results: List[Dict[str, str | None]] = []
+            for result in items:
+                processed_results.append({
+                    "title": result.get("title"),
+                    "link": result.get("link"),
+                    "snippet": result.get("snippet")
+                })
+
+            return json.dumps(processed_results)
+
+        except httpx.HTTPStatusError as e:
+            error_message = f"HTTP error during Google search: {e.response.text}"
+            return json.dumps({"error": error_message})
+        except Exception as e:
+            error_message = f"An unexpected error occurred: {str(e)}"
+            return json.dumps({"error": error_message})
+
+    def get_name(self) -> str:
+        return "google_search"
+
+    def get_description(self) -> str:
+        return "Performs a Google search and returns a list of web page links and snippets."
+
+    def get_parameters(self) -> Dict[str, Any]:
+        return {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "The search query string to search on Google."
+                }
+            },
+            "required": ["query"]
+        }
 
 
 class PlaywrightWrapper:

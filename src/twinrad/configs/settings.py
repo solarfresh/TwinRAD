@@ -24,11 +24,11 @@ def get_core_env_files() -> list[Path]:
     Returns only existing files to avoid warnings.
     """
     root_env = find_project_root(Path(__file__)) / ".env"
-    
+
     env_files = []
     if root_env.exists():
         env_files.append(root_env)
-    
+
     return env_files
 
 class TwinRADSettings(BaseSettings):
@@ -45,16 +45,21 @@ class TwinRADSettings(BaseSettings):
 
     # Core TwinRAD settings
     log_level: str = "INFO"
-    
+
     # LLM API Keys for red team agents
     gooelg_genai_api_key: str = ''
     twinkle_base_url: HttpUrl = HttpUrl('http://localhost')
     twinkle_api_key: str = ''
-    
+
     # Red team specific settings
     max_rounds: int = 20
     conversation_timeout: int = 300  # seconds
     safety_threshold: float = 0.8
+
+    # Tool API Keys
+    google_search_engine_id: str = ''
+    google_search_engine_api_key: str = ''
+    google_search_engine_base_url: str = "https://customsearch.googleapis.com/customsearch/v1"
 
 # Create an instance of the Settings class
 settings = TwinRADSettings()
