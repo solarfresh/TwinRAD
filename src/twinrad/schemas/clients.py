@@ -46,6 +46,7 @@ class ModelConfig(BaseModel):
     """
     name: str
     mode: Literal["gemini", "generic_api", "openai", "vllm"] = "generic_api"
+    max_model_len: int = 8192
     base_url: Optional[str] = None
     api_key: Optional[str] = None
     restrict_user_assistant_alternate: bool = False
