@@ -6,7 +6,8 @@ from twinrad.clients.client_manager import ClientManager
 from twinrad.schemas.agents import AgentConfig
 from twinrad.schemas.clients import LLMRequest, LLMResponse
 from twinrad.schemas.messages import Message
-from twinrad.tools.knowledge.retrieval import PageLoaderTool, WebScrapingTool
+from twinrad.tools.knowledge.retrieval import (GoogleSearchTool,
+                                               PageLoaderTool, WebScrapingTool)
 
 
 class DataLibrarian(BaseAgent):
@@ -50,6 +51,70 @@ class DataLibrarian(BaseAgent):
         }
 
 
+class QueryDecision(BaseAgent):
+    """
+    An expert agent that decides whether to provide a final summary or to
+    generate a new search query based on the completeness of collected data.
+    """
+
+    def get_system_message_map(self) -> Dict[str, str]:
+        return {
+            'gemini': (
+                "You are a specialized analysis agent. Your task is to analyze the provided search results and scraped content to determine if the user's original query has been fully answered.\n\n"
+                "Your output must be one of two formats:\n"
+                "1. If the information is **insufficient**, provide a new, refined search query as a simple string. For example: 'new query string here'\n"
+                "2. If the information is **sufficient**, and you have a comprehensive summary, respond with a single, empty string to signal completion.\n\n"
+                "Prioritize providing a full summary if possible. Only provide a new query if the data is clearly incomplete or contradictory. Do not add any extra text, explanations, or conversation."
+            ),
+            'default': (
+                "You are an analysis agent. If the provided data is insufficient, respond with a new search query. Otherwise, respond with a single, empty string to stop."
+            )
+        }
+
+
+class SearchAgent(BaseAgent):
+    """
+    Acts as an expert search agent responsible for finding relevant web pages
+    based on a natural language query.
+    """
+    def __init__(self, config: AgentConfig, client_manager: ClientManager):
+        super().__init__(config, client_manager)
+        self.tool = GoogleSearchTool()
+
+    def get_system_message_map(self) -> Dict[str, str]:
+        return {'default': "This function is not adopted."}
+
+    async def generate(self, messages: List[Message]) -> Message:
+        """
+        Processes a user's natural language request by directly performing a Google search.
+        """
+        # Take the user's original query directly.
+        query = messages[-1].content
+        self.logger.info(f"Received query from user: {query}")
+
+        if not query:
+            return Message(role='user', content=json.dumps({"error": "Missing 'query' in user request."}), name=self.name)
+
+        # Directly call the GoogleSearchTool with the query.
+        try:
+            tool_output_json_string = await self.tool.run(query=query)
+            tool_output_dict = json.loads(tool_output_json_string)
+
+            if "error" in tool_output_dict:
+                self.logger.warning("Tool execution failed, returning error to user.")
+                return Message(role='user', content=tool_output_json_string, name=self.name)
+
+            # The search results are the final output of this agent's task.
+            return Message(role='user', content=tool_output_json_string, name=self.name)
+
+        except json.JSONDecodeError:
+            self.logger.warning("Failed to parse tool output, returning error to user.")
+            return Message(role='user', content=json.dumps({"error": "Failed to parse tool output."}), name=self.name)
+        except Exception as e:
+            self.logger.error(f"An unexpected error occurred during search: {e}")
+            return Message(role='user', content=json.dumps({"error": f"An unexpected error occurred: {str(e)}"}), name=self.name)
+
+
 class SelectorFinder(BaseAgent):
     """
     Acts as an expert CSS selector finder. This agent's primary responsibility is to
@@ -68,7 +133,6 @@ class SelectorFinder(BaseAgent):
                 "Given a request that contains a URL, your task is to call this tool to retrieve the page content.\n"
                 "Your response must be a valid JSON object in the format: {\"tool\": \"load_page_html\", \"args\": {\"url\": \"your_url_here\"}}\n"
             ),
-            # Add other model families here
             'default': (
                 "You are a tool-use expert. Your sole function is to call tools to perform web-based tasks.\n"
                 "You have access to the following tool:\n"
@@ -163,6 +227,54 @@ class SelectorFinder(BaseAgent):
         return prompt_map['default']
 
 
+class URLOrchestrator(BaseAgent):
+    """
+    Acts as a URL management and orchestration agent. Its primary role is to
+    receive a list of search result URLs, manage a cache to prevent redundant
+    processing, and pass individual URLs to the next agent in the flow.
+    """
+    def __init__(self, config: AgentConfig, client_manager: ClientManager):
+        super().__init__(config, client_manager)
+        self.processed_urls = set()  # Cache to store processed URLs
+
+    def get_system_message_map(self) -> Dict[str, str]:
+        # This is a logic-based agent, so the system message is simple and informative.
+        return {
+            'gemini': "You are an orchestration agent. Your task is to manage the flow of URLs and ensure no duplicates are processed. Pass each unique URL to the next agent.",
+            'default': "You are an orchestration agent."
+        }
+
+    async def generate(self, messages: List[Message]) -> Message:
+        """
+        Receives search results, processes them for unique URLs, and
+        returns the next URL to be processed by the subsequent agent.
+        """
+        last_message = messages[-1]
+
+        # Check if the message is from the SearchAgent (which provides search results)
+        try:
+            search_results = json.loads(last_message.content)
+            original_query = messages[-2].content
+            message_contents = []
+            if isinstance(search_results, list):
+                # Populate the pending_urls list with new, unique URLs
+                for result in search_results:
+                    url = result.get('url')
+                    if url and url not in self.processed_urls:
+                        message_contents.append({"url": url, "query": original_query})
+                        self.processed_urls.add(url)
+
+            return Message(
+                role='user',
+                content=json.dumps(message_contents),
+                name=self.name
+            )
+
+        except json.JSONDecodeError:
+            self.logger.error("Failed to parse search results JSON.")
+            return Message(role='user', content=json.dumps({"error": "Failed to parse search results."}), name=self.name)
+
+
 class WebScout(BaseAgent):
     """
     Acts as an expert web research agent. This agent's primary responsibility is to
@@ -174,16 +286,7 @@ class WebScout(BaseAgent):
 
     def get_system_message_map(self) -> Dict[str, str]:
         return {
-            'gemini': (
-                "You are a specialized data extraction agent. Your sole function is to scrape data from provided HTML content using a given CSS selector.\n"
-                "You have access to a single tool, `scrape_web_data(html_content: str, query: str)`.\n"
-                "Your job is pure execution. When given HTML content and a CSS selector, you must call the tool and return the result.\n"
-                "Your response must be a valid JSON object in the format: {\"tool\": \"scrape_web_data\", \"args\": {\"html_content\": \"html_here\", \"query\": \"selector_here\"}}\n"
-            ),
-            'default': (
-                "You are a tool-use expert. Your sole function is to call the `scrape_web_data(html_content: str, query: str)` tool.\n"
-                "Your response must be a valid JSON object representing a tool call, like: {\"tool\": \"scrape_web_data\", \"args\": {\"html_content\": \"...\", \"query\": \".selector\"}}\n"
-            )
+            'default': 'This is not adopted.'
         }
 
     async def generate(self, messages: List[Message]) -> Message:
@@ -193,27 +296,20 @@ class WebScout(BaseAgent):
         # Step 1: The LLM's role is to parse the input and generate a tool call
         latest_message = messages[-1]
 
-        try:
-            # The input from the SelectorFinder is a JSON string
-            input_data = json.loads(latest_message.content)
-            html_content = input_data.get("html_content")
-            query = input_data.get("query")
-
-            if not html_content or not query:
-                return Message(role='user', content=json.dumps({"error": "Missing html_content or query in input."}), name=self.name)
-        except json.JSONDecodeError:
-            return Message(role='user', content=json.dumps({"error": "Invalid JSON input."}), name=self.name)
+        # The input from the SelectorFinder is a JSON string
+        url_contents = json.loads(latest_message.content)
 
         # Step 2: Directly call the tool with the parsed arguments
         # The agent's LLM is no longer used for this step. The agent acts as a pure executor.
-        results = {
-            "html_content": html_content,
-            "query": query
-        }
 
         try:
-            content = await self.tool.run(**results)
-            return Message(role='user', content=content, name=self.name)
+            content_string = ''
+            for url_content in url_contents:
+                if 'url' in url_content:
+                    tool_output_json_string = await self.tool.run(url=url_content.get('url'))
+                    tool_output_dict = json.loads(tool_output_json_string)
+                    content_string += tool_output_dict.get('data', '') + '\n\n'
+            return Message(role='user', content=content_string, name=self.name)
         except Exception as e:
             self.logger.error(f"WebScrapingTool execution failed: {e}")
             return Message(role='user', content=json.dumps({"error": f"Tool execution failed: {e}"}), name=self.name)

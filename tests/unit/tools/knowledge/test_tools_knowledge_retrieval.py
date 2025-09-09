@@ -29,12 +29,12 @@ mock_successful_response = {
 expected_processed_results = [
     {
         "title": "Example Domain",
-        "link": "https://www.example.com",
+        "url": "https://www.example.com",
         "snippet": "This domain is for use in illustrative examples in documents."
     },
     {
         "title": "Another Example Page",
-        "link": "https://www.example.org/page",
+        "url": "https://www.example.org/page",
         "snippet": "Another page for illustrative purposes."
     }
 ]
@@ -283,7 +283,7 @@ async def test_pw_get_raw_html_success():
 
     expected_json = {"url": url, "html_content": mock_content}
     assert json.loads(result) == expected_json
-    mock_page.goto.assert_called_once_with(url)
+    mock_page.goto.assert_called_once_with(url, timeout=300000)
 
 @pytest.mark.asyncio
 async def test_pw_get_raw_html_error():
@@ -320,7 +320,7 @@ async def test_pw_scrape_from_url_success():
 
     expected_json = {"url": url, "query": query, "data": mock_inner_text}
     assert json.loads(result) == expected_json
-    mock_page.goto.assert_called_once_with(url)
+    mock_page.goto.assert_called_once_with(url, timeout=300000)
     mock_page.locator.assert_called_once_with(query)
 
 @pytest.mark.asyncio
@@ -449,46 +449,31 @@ async def test_ws_run_success():
     # Mock the PlaywrightWrapper's scrape_data method to return a canned response
     mock_scrape_data = AsyncMock(return_value=json.dumps({"data": "Success"}))
     mock_playwright_wrapper = AsyncMock()
-    mock_playwright_wrapper.__aenter__.return_value.scrape_from_html = mock_scrape_data
+    mock_playwright_wrapper.__aenter__.return_value.scrape_all_text_from_url = mock_scrape_data
 
     # Patch the class itself to return our mock instance
     with patch('twinrad.tools.knowledge.retrieval.PlaywrightWrapper', return_value=mock_playwright_wrapper):
         tool = WebScrapingTool()
-        result = await tool.run(html_content="<p>Test</p>", query="p")
+        result = await tool.run(url="https://example.com/")
 
         expected_json = {"data": "Success"}
         assert json.loads(result) == expected_json
-        mock_scrape_data.assert_called_once_with("<p>Test</p>", "p")
+        mock_scrape_data.assert_called_once_with(url="https://example.com/")
 
 @pytest.mark.asyncio
-async def test_ws_run_missing_html():
+async def test_ws_run_missing_url():
     """
     Tests that a run with a missing URL returns the correct error message.
     """
     mock_scrape_data = AsyncMock(return_value=json.dumps({"data": "Success"}))
     mock_playwright_wrapper = AsyncMock()
-    mock_playwright_wrapper.__aenter__.return_value.scrape_data = mock_scrape_data
+    mock_playwright_wrapper.__aenter__.return_value.scrape_all_text_from_url = mock_scrape_data
 
     with patch('twinrad.tools.knowledge.retrieval.PlaywrightWrapper', return_value=mock_playwright_wrapper):
         tool = WebScrapingTool()
-        result = json.loads(await tool.run(query="p"))
+        result = json.loads(await tool.run())
 
-    assert result == {"error": "Missing 'html_content' or 'query' parameters."}
-
-@pytest.mark.asyncio
-async def test_ws_run_missing_query():
-    """
-    Tests that a run with a missing query returns the correct error message.
-    """
-    mock_scrape_data = AsyncMock(return_value=json.dumps({"data": "Success"}))
-    mock_playwright_wrapper = AsyncMock()
-    mock_playwright_wrapper.__aenter__.return_value.scrape_data = mock_scrape_data
-
-    with patch('twinrad.tools.knowledge.retrieval.PlaywrightWrapper', return_value=mock_playwright_wrapper):
-        tool = WebScrapingTool()
-        result = json.loads(await tool.run(html_content="<p>Test</p>"))
-
-    assert result == {"error": "Missing 'html_content' or 'query' parameters."}
+    assert result == {"error": "Missing 'url' parameter."}
 
 def test_ws_get_name():
     """
@@ -512,15 +497,11 @@ def test_ws_get_parameters():
     expected_params = {
         "type": "object",
         "properties": {
-            "query": {
+            "url": {
                 "type": "string",
-                "description": "The CSS selector to identify the data to be scraped."
-            },
-            "html_content": {
-                "type": "string",
-                "description": "The raw HTML content of the webpage to scrape."
+                "description": "The url of the webpage to scrape."
             }
         },
-        "required": ["query", "html_content"]
+        "required": ["url"]
     }
     assert tool.get_parameters() == expected_params
