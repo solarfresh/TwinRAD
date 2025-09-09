@@ -8,6 +8,7 @@ class RoomConfig(ModelConfig, ClientConfig, AgentConfig):
 
 
 class DebateRoomConfig(RoomConfig):
+    referee_model: str
     max_rounds: int = 10
     workflow: Literal[
         "BaselineVsDeceptionFlow",
