@@ -57,7 +57,7 @@ class GoogleSearchTool(BaseTool):
             for result in items:
                 processed_results.append({
                     "title": result.get("title"),
-                    "link": result.get("link"),
+                    "url": result.get("link"),
                     "snippet": result.get("snippet")
                 })
 
@@ -98,6 +98,7 @@ class PlaywrightWrapper:
         self._context = None
         self._page = None
         self._playwright = None
+        self.timeout = 300000
 
     async def __aenter__(self):
         self._playwright = await async_playwright().start()
@@ -111,6 +112,18 @@ class PlaywrightWrapper:
             await self._browser.close()
         if self._playwright:
             await self._playwright.stop()
+
+    async def scrape_all_text_from_url(self, url: str) -> str:
+        if not self._page:
+            raise RuntimeError("Playwright page is not initialized.")
+
+        try:
+            await self._page.goto(url, timeout=self.timeout)
+            element = self._page.locator('body')
+            data = await element.all_inner_texts()
+            return json.dumps({"url": url, "query": 'body', "data": ''.join(data)})
+        except Exception as e:
+            return json.dumps({"error": str(e)})
 
     async def scrape_from_html(self, html_content: str, query: str) -> str:
         """
@@ -142,7 +155,7 @@ class PlaywrightWrapper:
             raise RuntimeError("Playwright page is not initialized.")
 
         try:
-            await self._page.goto(url)
+            await self._page.goto(url, timeout=self.timeout)
             element = self._page.locator(query)
             data = await element.inner_text()
             return json.dumps({"url": url, "query": query, "data": data})
@@ -157,7 +170,7 @@ class PlaywrightWrapper:
             raise RuntimeError("Playwright page is not initialized.")
 
         try:
-            await self._page.goto(url)
+            await self._page.goto(url, timeout=self.timeout)
             html_content = await self._page.content()
             return json.dumps({"url": url, "html_content": html_content})
         except Exception as e:
@@ -213,14 +226,13 @@ class WebScrapingTool(BaseTool):
             html_content (str): The raw HTML content to scrape.
             query (str): The CSS selector to identify the data to be scraped.
         """
-        html_content = kwargs.get('html_content', '')
-        query = kwargs.get('query', '')
-        self.logger.debug(f"Running WebScoutTool with html_content: {html_content} and query: {query}")
-        if not html_content or not query:
-            return json.dumps({"error": "Missing 'html_content' or 'query' parameters."})
+        url = kwargs.get('url', '')
+        self.logger.debug(f"Running WebScoutTool with url: {url}")
+        if not url:
+            return json.dumps({"error": "Missing 'url' parameter."})
 
         async with PlaywrightWrapper() as playwright:
-            return await playwright.scrape_from_html(html_content, query)
+            return await playwright.scrape_all_text_from_url(url=url)
 
     def get_name(self) -> str:
         return "scrape_web_data"
@@ -232,14 +244,10 @@ class WebScrapingTool(BaseTool):
         return {
             "type": "object",
             "properties": {
-                "query": {
+                "url": {
                     "type": "string",
-                    "description": "The CSS selector to identify the data to be scraped."
-                },
-                "html_content": {
-                    "type": "string",
-                    "description": "The raw HTML content of the webpage to scrape."
+                    "description": "The url of the webpage to scrape."
                 }
             },
-            "required": ["query", "html_content"]
+            "required": ["url"]
         }
