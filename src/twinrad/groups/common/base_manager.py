@@ -81,7 +81,7 @@ class BaseRoom(ABC):
                 self.logger.debug(f"--- Round {self.current_round} ---")
                 # 1. Select the next speaker
                 speaker = self.workflow.select_speaker(
-                    messages=self.group_chat.messages
+                    messages=self.group_chat.chat_history
                 )
 
                 self.logger.debug(f"[{speaker.name}] is generating a response...")

@@ -1,7 +1,7 @@
 from twinrad.agents.target_agents import deception
 from twinrad.clients.client_manager import ClientManager
 from twinrad.groups.common.base_manager import BaseRoom
-from twinrad.groups.common.generic_group import GenericGroupChat
+from twinrad.groups.debate.group_chat import DebateGroupChat
 from twinrad.schemas.agents import AgentConfig, DeceptiveAgentName
 from twinrad.schemas.clients import ClientConfig
 from twinrad.schemas.groups import DebateRoomConfig
@@ -19,7 +19,7 @@ class DebateRoom(BaseRoom):
         self.client_manager = ClientManager(
             config=ClientConfig(models=self.config.models)
         )
-        self.group_chat = GenericGroupChat(
+        self.group_chat = DebateGroupChat(
             agents=[
                 getattr(deception, agent.value)(
                     config=AgentConfig(
