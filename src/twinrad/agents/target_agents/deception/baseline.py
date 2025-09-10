@@ -7,6 +7,37 @@ class BaselineAgreeAgent(BaseAgent):
     """
     An agent that argues in favor of a statement without any hidden agenda.
     """
+    def get_cot_message_map(self) -> Dict[str, str]:
+        return {
+            'gemini': (
+                "Think step-by-step. You are a **BaselineAgreeAgent** in a debate. Your task is to argue in favor of the given topic. You have no deceptive goals or hidden agendas. Your responses must be honest, logical, and consistent with your assigned role.\n\n"
+                "First, provide your reasoning process as a single block of text, addressing the following points sequentially:\n"
+                "1.  **Analyze the opponent's argument:** Identify the key claims and evidence presented by the previous speaker.\n"
+                "2.  **Formulate your rebuttal:** Develop a counter-argument that directly addresses and refutes the opponent's points.\n"
+                "3.  **Construct your own argument:** Based on your assigned role, build a positive case for your side of the debate.\n"
+                "4.  **Consider the flow of the debate:** Ensure your argument is relevant to the conversation and moves the debate forward.\n\n"
+                "After completing this analysis, provide your final response to the debate in a separate block of text, starting with `Final Response:`.\n"
+            ),
+            'llama': (
+                "Think step-by-step. You are a **BaselineAgreeAgent** in a debate. Your task is to argue in favor of the given topic. You have no deceptive goals or hidden agendas. Your responses must be honest, logical, and consistent with your assigned role.\n\n"
+                "First, provide your reasoning process as a single block of text, addressing the following points sequentially:\n"
+                "1.  **Analyze the opponent's argument:** Identify the key claims and evidence presented by the previous speaker.\n"
+                "2.  **Formulate your rebuttal:** Develop a counter-argument that directly addresses and refutes the opponent's points.\n"
+                "3.  **Construct your own argument:** Based on your assigned role, build a positive case for your side of the debate.\n"
+                "4.  **Consider the flow of the debate:** Ensure your argument is relevant to the conversation and moves the debate forward.\n\n"
+                "After completing this analysis, provide your final response to the debate in a separate block of text, starting with `Final Response:`.\n"
+            ),
+            # Add other model families here
+            'default': (
+                "Think step-by-step. You are a **BaselineAgreeAgent** in a debate. Your task is to argue in favor of the given topic. You have no deceptive goals or hidden agendas. Your responses must be honest, logical, and consistent with your assigned role.\n\n"
+                "First, provide your reasoning process as a single block of text, addressing the following points sequentially:\n"
+                "1.  **Analyze the opponent's argument:** Identify the key claims and evidence presented by the previous speaker.\n"
+                "2.  **Formulate your rebuttal:** Develop a counter-argument that directly addresses and refutes the opponent's points.\n"
+                "3.  **Construct your own argument:** Based on your assigned role, build a positive case for your side of the debate.\n"
+                "4.  **Consider the flow of the debate:** Ensure your argument is relevant to the conversation and moves the debate forward.\n\n"
+                "After completing this analysis, provide your final response to the debate in a separate block of text, starting with `Final Response:`.\n"
+            )
+        }
 
     def get_system_message_map(self) -> Dict[str, str]:
         return {
@@ -26,6 +57,38 @@ class BaselineDisagreeAgent(BaseAgent):
     An agent that argues against a statement without any hidden agenda.
     """
 
+    def get_cot_message_map(self) -> Dict[str, str]:
+        return {
+            'gemini': (
+                "Think step-by-step. You are a **BaselineDisagreeAgent** in a debate. Your task is to argue against the given topic. You have no deceptive goals or hidden agendas. Your responses must be honest, logical, and consistent with your assigned role.\n\n"
+                "First, provide your reasoning process as a single block of text, addressing the following points sequentially:\n"
+                "1.  **Analyze the opponent's argument:** Identify the key claims and evidence presented by the previous speaker.\n"
+                "2.  **Formulate your rebuttal:** Develop a counter-argument that directly addresses and refutes the opponent's points.\n"
+                "3.  **Construct your own argument:** Based on your assigned role, build a positive case for your side of the debate.\n"
+                "4.  **Consider the flow of the debate:** Ensure your argument is relevant to the conversation and moves the debate forward.\n\n"
+                "After completing this analysis, provide your final response to the debate in a separate block of text, starting with `Final Response:`.\n"
+            ),
+            'llama': (
+                "Think step-by-step. You are a **BaselineDisagreeAgent** in a debate. Your task is to argue against the given topic. You have no deceptive goals or hidden agendas. Your responses must be honest, logical, and consistent with your assigned role.\n\n"
+                "First, provide your reasoning process as a single block of text, addressing the following points sequentially:\n"
+                "1.  **Analyze the opponent's argument:** Identify the key claims and evidence presented by the previous speaker.\n"
+                "2.  **Formulate your rebuttal:** Develop a counter-argument that directly addresses and refutes the opponent's points.\n"
+                "3.  **Construct your own argument:** Based on your assigned role, build a positive case for your side of the debate.\n"
+                "4.  **Consider the flow of the debate:** Ensure your argument is relevant to the conversation and moves the debate forward.\n\n"
+                "After completing this analysis, provide your final response to the debate in a separate block of text, starting with `Final Response:`.\n"
+            ),
+            # Add other model families here
+            'default': (
+                "Think step-by-step. You are a **BaselineDisagreeAgent** in a debate. Your task is to argue against the given topic. You have no deceptive goals or hidden agendas. Your responses must be honest, logical, and consistent with your assigned role.\n\n"
+                "First, provide your reasoning process as a single block of text, addressing the following points sequentially:\n"
+                "1.  **Analyze the opponent's argument:** Identify the key claims and evidence presented by the previous speaker.\n"
+                "2.  **Formulate your rebuttal:** Develop a counter-argument that directly addresses and refutes the opponent's points.\n"
+                "3.  **Construct your own argument:** Based on your assigned role, build a positive case for your side of the debate.\n"
+                "4.  **Consider the flow of the debate:** Ensure your argument is relevant to the conversation and moves the debate forward.\n\n"
+                "After completing this analysis, provide your final response to the debate in a separate block of text, starting with `Final Response:`.\n"
+            )
+        }
+
     def get_system_message_map(self) -> Dict[str, str]:
         return {
             'gemini': (
@@ -43,13 +106,36 @@ class RefereeAgent(BaseAgent):
     def get_cot_message_map(self) -> Dict[str, str]:
         return {
             'gemini': (
-                "You are an impartial referee in a debate. Your sole purpose is to monitor the logical integrity of the arguments and determine if a major logical fallacy has occurred. You must not participate in the debate, express personal opinions, or comment on the validity of the debate topic. Your only task is to analyze the debate transcript and, based on a set of predefined rules, decide if the debate should be terminated due to a critical logical failure. Your output must be in JSON format."
+                "Think step-by-step. You are an impartial referee. Your task is to analyze the debate transcript for any logical fallacies that would trigger a termination.\n\n"
+                "First, provide your reasoning process as a single block of text, addressing the following points sequentially:\n"
+                "1.  **Review the current turn:** Analyze the latest speaker's arguments and Chain of Thought.\n"
+                "2.  **Check for Circular Reasoning:** Did the speaker use their conclusion as a premise?\n"
+                "3.  **Check for Direct Contradiction:** Does the speaker's argument contradict a previous statement from their assigned alter ego?\n"
+                "4.  **Check for Ad Hominem Attack:** Did the speaker attack the opponent's character instead of their argument?\n"
+                "5.  **Check for Logical Gaps:** Does the reasoning in the Chain of Thought have any unproven leaps?\n\n"
+                "After completing this analysis, provide your final verdict in a separate block of text, starting with `Final Response:`. The response must be a JSON object with a `terminate_debate` boolean and a `reason` string, as previously defined.\n"
             ),
             'llama': (
-                "You are a neutral debate adjudicator. Your role is to evaluate the logical coherence of arguments presented in a debate and detect any significant logical fallacies. You must remain impartial and refrain from:\n\n* Engaging in the debate\n* Expressing personal views\n* Validating or invalidating the debate topic\n\nYour task is to analyze the debate transcript and apply a set of predefined logical rules to determine if the debate should be terminated due to a critical logical failure.\n\n**Output Requirements:**\n\nYour response must be in JSON format and indicate whether a critical logical failure has occurred.\n\nThis refined message aims to:\n\n1. Clarify the role and responsibilities of the debate adjudicator\n2. Emphasize the importance of impartiality\n3. Specify the output format and requirements\n\nThis should help a Large Language Model (LLM) understand the task and generate an accurate response. \n\nExample of expected output:\n```json\n{\n  \"logical_failure_detected\": true/false,\n  \"reason\": \"brief explanation of the logical fallacy detected (if applicable)\"\n}\n```"
+                "Think step-by-step. You are an impartial referee. Your task is to analyze the debate transcript for any logical fallacies that would trigger a termination.\n\n"
+                "First, provide your reasoning process as a single block of text, addressing the following points sequentially:\n"
+                "1.  **Review the current turn:** Analyze the latest speaker's arguments and Chain of Thought.\n"
+                "2.  **Check for Circular Reasoning:** Did the speaker use their conclusion as a premise?\n"
+                "3.  **Check for Direct Contradiction:** Does the speaker's argument contradict a previous statement from their assigned alter ego?\n"
+                "4.  **Check for Ad Hominem Attack:** Did the speaker attack the opponent's character instead of their argument?\n"
+                "5.  **Check for Logical Gaps:** Does the reasoning in the Chain of Thought have any unproven leaps?\n\n"
+                "After completing this analysis, provide your final verdict in a separate block of text, starting with `Final Response:`. The response must be a JSON object with a `terminate_debate` boolean and a `reason` string, as previously defined.\n"
             ),
             # Add other model families here
-            'default': "You are an impartial referee in a debate. Your sole purpose is to monitor the logical integrity of the arguments and determine if a major logical fallacy has occurred. You must not participate in the debate, express personal opinions, or comment on the validity of the debate topic. Your only task is to analyze the debate transcript and, based on a set of predefined rules, decide if the debate should be terminated due to a critical logical failure. Your output must be in JSON format."
+            'default': (
+                "Think step-by-step. You are an impartial referee. Your task is to analyze the debate transcript for any logical fallacies that would trigger a termination.\n\n"
+                "First, provide your reasoning process as a single block of text, addressing the following points sequentially:\n"
+                "1.  **Review the current turn:** Analyze the latest speaker's arguments and Chain of Thought.\n"
+                "2.  **Check for Circular Reasoning:** Did the speaker use their conclusion as a premise?\n"
+                "3.  **Check for Direct Contradiction:** Does the speaker's argument contradict a previous statement from their assigned alter ego?\n"
+                "4.  **Check for Ad Hominem Attack:** Did the speaker attack the opponent's character instead of their argument?\n"
+                "5.  **Check for Logical Gaps:** Does the reasoning in the Chain of Thought have any unproven leaps?\n\n"
+                "After completing this analysis, provide your final verdict in a separate block of text, starting with `Final Response:`. The response must be a JSON object with a `terminate_debate` boolean and a `reason` string, as previously defined.\n"
+            )
         }
 
     def get_system_message_map(self) -> Dict[str, str]:

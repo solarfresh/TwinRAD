@@ -26,11 +26,14 @@ class OpenAIHandler(BaseHandler):
         This is the recommended non-blocking method for modern applications.
         """
         try:
+            last_message = request.messages[-1]
             messages_payload = []
             if request.system_message:
                 messages_payload.append({"role": "system", "content": request.system_message})
+
             for msg in request.messages:
-                messages_payload.append({"role": msg.role, "content": msg.content})
+                role = 'assistant' if msg.name == last_message.name else 'user'
+                messages_payload.append({"role": role, "content": msg.content})
 
             response: ChatCompletion = await self.client.chat.completions.create(
                 model=request.model,

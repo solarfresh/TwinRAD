@@ -16,13 +16,9 @@ class DebateRoom(BaseRoom):
         self.config = config
         self.terminator = MaxRoundsCondition(max_rounds=self.config.max_rounds)
         self.current_round = 0
-
-    async def __aenter__(self):
         self.client_manager = ClientManager(
             config=ClientConfig(models=self.config.models)
         )
-        await self.client_manager.initialize()
-
         self.group_chat = GenericGroupChat(
             agents=[
                 getattr(deception, agent.value)(
@@ -37,6 +33,8 @@ class DebateRoom(BaseRoom):
         )
         self.workflow = getattr(deceptive_goals, self.config.workflow)(group_chat=self.group_chat)
 
+    async def __aenter__(self):
+        await self.client_manager.initialize()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
