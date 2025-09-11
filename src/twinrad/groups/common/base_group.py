@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List
 
 from twinrad.agents.common.base_agent import BaseAgent
+from twinrad.configs.logging_config import setup_logging
 from twinrad.schemas.messages import Message
 
 
@@ -17,6 +18,7 @@ class BaseGroupChat(ABC):
         self._messages: List[Message] = []
 
         self._size = len(agents)
+        self.logger = setup_logging(name=f"[{self.__class__.__name__}]")
 
     @property
     def agents(self) -> List[BaseAgent]:

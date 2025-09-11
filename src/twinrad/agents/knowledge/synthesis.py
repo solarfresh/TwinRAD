@@ -36,7 +36,7 @@ class ReportAnalyst(BaseAgent):
     """
     def get_system_message_map(self) -> Dict[str, str]:
         return {
-            'gemini': (
+            'en': (
                 "You are a **Report Analyst**, an expert in document comprehension and summarization. Your sole purpose is to read detailed reports and provide concise, accurate summaries or direct answers to specific questions based *only* on the provided text. You must be precise and neutral in your analysis. Your output should be structured to deliver maximum information with minimum redundancy.\n\n"
                 "**Your constraints are strict:**\n\n"
                 "* You **must not** add any information not explicitly present in the source report.\n"

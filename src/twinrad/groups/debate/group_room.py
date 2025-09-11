@@ -24,7 +24,8 @@ class DebateRoom(BaseRoom):
                 getattr(deception, agent.value)(
                     config=AgentConfig(
                         name=agent.value,
-                        model=self.config.referee_model if agent.name == DeceptiveAgentName.REFEREE_AGENT.name else self.config.model
+                        model=self.config.referee_model if agent.name == DeceptiveAgentName.REFEREE_AGENT.name else self.config.model,
+                        lang=self.config.lang
                     ),
                     client_manager=self.client_manager
                 )
