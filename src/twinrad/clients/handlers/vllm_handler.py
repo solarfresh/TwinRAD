@@ -118,11 +118,6 @@ class VLLMHandler(BaseHandler):
         messages_size = len(request.messages)
         last_message = request.messages[-1]
         for index, msg in enumerate(request.messages):
-            if self.config.restrict_user_assistant_alternate:
-                role = 'user' if index % 2 == ((messages_size + 1) % 2) else 'assistant'
-            else:
-                role = 'assistant' if msg.name == last_message.name else 'user'
-
             messages_payload.append({"role": role, "content": msg.content})
 
         if self.config.restrict_user_assistant_alternate:

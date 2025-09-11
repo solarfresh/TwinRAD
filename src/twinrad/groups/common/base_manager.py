@@ -86,12 +86,15 @@ class BaseRoom(ABC):
 
                 self.logger.debug(f"[{speaker.name}] is generating a response...")
 
-                # 2. Get a response from the speaker
-                response = await speaker.generate(self.group_chat.messages)
+                # Re-define roles for the speaker to respond appropriately
+                messages = self.define_speak_roles(speaker, self.group_chat.messages)
+
+                # Get a response from the speaker
+                response = await speaker.generate(messages)
 
                 self.logger.info(f"[{speaker.name}] {response.content}")
 
-                # 3. Add the response to the history
+                # Add the response to the history
                 self.group_chat.add_message(response)
                 self.current_round += 1
             except Exception as e:
@@ -99,5 +102,13 @@ class BaseRoom(ABC):
                 # Decide on a recovery strategy here, e.g., break, continue, or retry
                 break
 
-        # 4. Return the final messages
+        # Return the final messages
         return self.group_chat.messages
+
+    def define_speak_roles(self, recipient: BaseAgent, messages: List[Message]) -> List[Message]:
+        redefined_messages = []
+        for message in messages:
+            role = 'assistant' if message.name == recipient.name else 'user'
+            redefined_messages.append(Message(role=role, content=message.content, name=message.name))
+
+        return redefined_messages
