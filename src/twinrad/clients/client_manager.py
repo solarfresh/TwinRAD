@@ -5,9 +5,14 @@ from typing import Dict
 from twinrad.clients.handlers.base_handler import BaseHandler
 from twinrad.clients.handlers.gemini_handler import GeminiHandler
 from twinrad.clients.handlers.openai_handler import OpenAIHandler
-from twinrad.clients.handlers.vllm_handler import VLLMHandler
 from twinrad.configs.logging_config import setup_logging
 from twinrad.schemas.clients import ClientConfig, LLMRequest, LLMResponse
+
+try:
+    from twinrad.clients.handlers.vllm_handler import VLLMHandler
+    using_vllm_handler = True
+except ImportError:
+    using_vllm_handler = False
 
 
 class ClientManager:
@@ -37,7 +42,8 @@ class ClientManager:
             if not api_key and model_config.mode not in ('vllm',):
                 raise ValueError(f"API key for model '{model_config.name}' is not provided.")
 
-            if model_config.mode == "vllm":
+            # vLLM is an optional dependency
+            if using_vllm_handler and model_config.mode == "vllm":
                 handler_instance = VLLMHandler(config=model_config)
                 await handler_instance.ainit()
 
