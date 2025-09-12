@@ -51,6 +51,7 @@ def mock_config():
     base_room_config = MagicMock(spec=RoomConfig)
     base_room_config.name = 'Test'
     base_room_config.max_rounds = 3
+    base_room_config.turn_limit = 100
     return base_room_config
 
 # Test the BaseRoom class

@@ -4,7 +4,7 @@ from typing import List, Tuple
 
 from twinrad.agents.common.base_agent import BaseAgent
 from twinrad.groups.common.base_group import BaseGroupChat
-from twinrad.schemas.agents import DeceptiveAgentName
+from twinrad.schemas.agents import DebateAgentName
 from twinrad.schemas.messages import Message
 
 
@@ -13,14 +13,14 @@ class DebateGroupChat(BaseGroupChat):
     def __init__(self, agents: List[BaseAgent]):
         super().__init__(agents=agents)
         self._chain_of_thoughts: List[Message] = []
-        self.block_pattern = re.compile(r'(?=\d+\.\s+\*\*.*?\*\*|##\s*.*?(?=\n))')
-        self.title_pattern = re.compile(r'^(?:\d+\.\s+\*\*(.*?)\*\*|##\s*(.*?)(?:\n|$))', re.DOTALL)
-        self.clean_title_pattern = re.compile(r'^\d+\.\s*|\*\*|##\s*|^\d+:\s*|^Step\s*\d+:\s*')
+        self.block_pattern = re.compile(r'(?=\d+\.\s+\*\*.*?\*\*|##?\s*.*?(?=\n))')
+        self.title_pattern = re.compile(r'^(?:\d+\.\s+\*\*(.*?)\*\*|##?\s*(.*?)(?:\n|$))', re.DOTALL)
+        self.clean_title_pattern = re.compile(r'^\d+\.\s*|\*\*|##?\s*|^\d+:\s*|^Step\s*\d+:\s*')
 
     def add_message(self, message: Message):
         """Adds a message to the chat history and increments the round count."""
         self._chat_history.append(message)
-        if not message.name == DeceptiveAgentName.REFEREE_AGENT.value:
+        if not message.name == DebateAgentName.REFEREE_AGENT.value:
             self._parse_message(message)
 
     @property

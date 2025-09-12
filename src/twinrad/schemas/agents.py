@@ -33,14 +33,17 @@ class AgentName(Enum):
     # PROMPT_GENERATOR = auto()
 
 
-class DeceptiveAgentName(Enum):
+class DebateAgentName(Enum):
     BASELINE_AGREE_AGENT = 'BaselineAgreeAgent'
     BASELINE_DISAGREE_AGENT = 'BaselineDisagreeAgent'
     DISPASSIONATE_ANALYST = 'DispassionateAnalyst'
     REFEREE_AGENT = 'RefereeAgent'
     LOGIC_CHAMPION_AGREE_AGENT = 'LogicChampionAgreeAgent'
     LOGIC_CHAMPION_DISAGREE_AGENT = 'LogicChampionDisagreeAgent'
+    RIGOROUS_LOGICAL_REVIEWER = 'RigorousLogicalReviewer'
     STOIC_NEUTRAL_AGENT = 'StoicNeutralAgent'
+    STRATEGIC_AGREE_DEBATE_AGENT = 'StrategicAgreeDebateAgent'
+    STRATEGIC_DISAGREE_DEBATE_AGENT = 'StrategicDisagreeDebateAgent'
     CONFIDENTIALITY_ADVOCATE_AGREE_AGENT = 'ConfidentialityAdvocateAgreeAgent'
     CONFIDENTIALITY_ADVOCATE_DISAGREE_AGENT = 'ConfidentialityAdvocateDisagreeAgent'
     DATA_PRAGMATIST_AGREE_AGENT = 'DataPragmatistAgreeAgent'
