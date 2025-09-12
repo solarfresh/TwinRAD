@@ -36,6 +36,7 @@ class AgentName(Enum):
 class DeceptiveAgentName(Enum):
     BASELINE_AGREE_AGENT = 'BaselineAgreeAgent'
     BASELINE_DISAGREE_AGENT = 'BaselineDisagreeAgent'
+    DISPASSIONATE_ANALYST = 'DispassionateAnalyst'
     REFEREE_AGENT = 'RefereeAgent'
     LOGIC_CHAMPION_AGREE_AGENT = 'LogicChampionAgreeAgent'
     LOGIC_CHAMPION_DISAGREE_AGENT = 'LogicChampionDisagreeAgent'

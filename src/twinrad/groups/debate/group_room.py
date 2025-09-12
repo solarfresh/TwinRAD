@@ -48,6 +48,7 @@ class DebateRoom(BaseRoom):
     def define_speak_roles(self, recipient: BaseAgent, messages: List[Message]) -> List[Message]:
         group = {
             'neutral': [
+                DeceptiveAgentName.DISPASSIONATE_ANALYST.value,
                 DeceptiveAgentName.STOIC_NEUTRAL_AGENT.value
             ],
             'agree': [
@@ -71,7 +72,7 @@ class DebateRoom(BaseRoom):
             recipient_role_stance = 'disagree'
 
         redefined_messages = []
-        for message in messages:
+        for message in messages[-(self.config.turn_limit + 1):]:
             role = 'assistant' if message.name in group[recipient_role_stance] else 'user'
             redefined_messages.append(Message(role=role, content=message.content, name=message.name))
 

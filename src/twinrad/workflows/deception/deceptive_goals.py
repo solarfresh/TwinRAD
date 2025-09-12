@@ -47,12 +47,14 @@ class GoalVsGoalFlow(DebateBaseFlow):
 
 class FullSimFlow(DebateBaseFlow):
     turn_list = [
-        DeceptiveAgentName.LOGIC_CHAMPION_AGREE_AGENT.value,
-        DeceptiveAgentName.CONFIDENTIALITY_ADVOCATE_DISAGREE_AGENT.value,
-        DeceptiveAgentName.DATA_PRAGMATIST_AGREE_AGENT.value,
-        DeceptiveAgentName.STOIC_NEUTRAL_AGENT.value,
+        DeceptiveAgentName.BASELINE_AGREE_AGENT.value,
         DeceptiveAgentName.LOGIC_CHAMPION_DISAGREE_AGENT.value,
         DeceptiveAgentName.CONFIDENTIALITY_ADVOCATE_AGREE_AGENT.value,
         DeceptiveAgentName.DATA_PRAGMATIST_DISAGREE_AGENT.value,
-        DeceptiveAgentName.STOIC_NEUTRAL_AGENT.value,
+        DeceptiveAgentName.DISPASSIONATE_ANALYST.value,
+        DeceptiveAgentName.BASELINE_DISAGREE_AGENT.value,
+        DeceptiveAgentName.LOGIC_CHAMPION_AGREE_AGENT.value,
+        DeceptiveAgentName.CONFIDENTIALITY_ADVOCATE_DISAGREE_AGENT.value,
+        DeceptiveAgentName.DATA_PRAGMATIST_AGREE_AGENT.value,
+        DeceptiveAgentName.DISPASSIONATE_ANALYST.value,
     ]

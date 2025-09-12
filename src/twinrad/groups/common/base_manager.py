@@ -107,7 +107,7 @@ class BaseRoom(ABC):
 
     def define_speak_roles(self, recipient: BaseAgent, messages: List[Message]) -> List[Message]:
         redefined_messages = []
-        for message in messages:
+        for message in messages[-(self.config.turn_limit + 1):]:
             role = 'assistant' if message.name == recipient.name else 'user'
             redefined_messages.append(Message(role=role, content=message.content, name=message.name))
 
