@@ -35,7 +35,10 @@ class StringMatchCondition(TerminationCondition):
     Terminates the conversation if specific strings appear in the responses with a certain frequency.
     """
 
-    def __init__(self, match_strings: List[str], required_frequency: int):
+    def __init__(self, match_senders: List[str], match_strings: List[str], required_frequency: int):
+        if not match_senders:
+            raise ValueError("match_senders cannot be an empty list.")
+
         if not match_strings:
             raise ValueError("match_strings cannot be an empty list.")
 
@@ -43,6 +46,7 @@ class StringMatchCondition(TerminationCondition):
             raise ValueError("required_frequency must be a positive integer.")
 
         self.match_count = 0
+        self.match_senders = match_senders
         self.match_strings = match_strings
         self.required_frequency = required_frequency
 
@@ -57,10 +61,11 @@ class StringMatchCondition(TerminationCondition):
         Returns:
             bool: True if the conversation should end, False otherwise.
         """
-        if any(match_str in message.content for match_str in self.match_strings):
-            self.match_count += 1
-        else:
-            self.match_count = 0
+        if message.name in self.match_senders:
+            if any(match_str in message.content for match_str in self.match_strings):
+                self.match_count += 1
+            else:
+                self.match_count = 0
 
         return self.match_count >= self.required_frequency
 

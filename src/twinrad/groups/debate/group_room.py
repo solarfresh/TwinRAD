@@ -22,7 +22,10 @@ class DebateRoom(BaseRoom):
         self.config = config
         self.terminator = CompositeCondition(conditions=[
             MaxRoundsCondition(max_rounds=self.config.max_rounds),
-            StringMatchCondition(match_strings=self.config.termination_match_strings, required_frequency=self.config.required_frequency)
+            StringMatchCondition(
+                match_senders=[DebateAgentName.REFEREE_AGENT.value],
+                match_strings=self.config.termination_match_strings,
+                required_frequency=self.config.required_frequency)
         ])
         self.current_round = 0
         self.client_manager = ClientManager(
