@@ -9,7 +9,9 @@ from twinrad.schemas.agents import AgentConfig, DebateAgentName
 from twinrad.schemas.clients import ClientConfig
 from twinrad.schemas.groups import DebateRoomConfig
 from twinrad.schemas.messages import Message
-from twinrad.workflows.common.termination import MaxRoundsCondition
+from twinrad.workflows.common.termination import (CompositeCondition,
+                                                  MaxRoundsCondition,
+                                                  StringMatchCondition)
 from twinrad.workflows.debate import debate_flow
 
 
@@ -18,7 +20,10 @@ class DebateRoom(BaseRoom):
         super().__init__(config=config)
 
         self.config = config
-        self.terminator = MaxRoundsCondition(max_rounds=self.config.max_rounds)
+        self.terminator = CompositeCondition(conditions=[
+            MaxRoundsCondition(max_rounds=self.config.max_rounds),
+            StringMatchCondition(match_strings=self.config.termination_match_strings, required_frequency=self.config.required_frequency)
+        ])
         self.current_round = 0
         self.client_manager = ClientManager(
             config=ClientConfig(models=self.config.models)
@@ -56,13 +61,16 @@ class DebateRoom(BaseRoom):
                 DebateAgentName.BASELINE_AGREE_AGENT.value,
                 DebateAgentName.CONFIDENTIALITY_ADVOCATE_AGREE_AGENT.value,
                 DebateAgentName.DATA_PRAGMATIST_AGREE_AGENT.value,
+                DebateAgentName.ECONOMICSTRATEGISTAGENT.value,
                 DebateAgentName.LOGIC_CHAMPION_AGREE_AGENT.value,
+                DebateAgentName.SECURITY_ADVOCATE_AGENT.value,
                 DebateAgentName.STRATEGIC_AGREE_DEBATE_AGENT.value,
             ],
             'disagree': [
                 DebateAgentName.BASELINE_DISAGREE_AGENT.value,
                 DebateAgentName.CONFIDENTIALITY_ADVOCATE_DISAGREE_AGENT.value,
                 DebateAgentName.DATA_PRAGMATIST_DISAGREE_AGENT.value,
+                DebateAgentName.ECONOMICDISMANTLINGAGENT.value,
                 DebateAgentName.LOGIC_CHAMPION_DISAGREE_AGENT.value,
                 DebateAgentName.STRATEGIC_DISAGREE_DEBATE_AGENT.value,
             ]

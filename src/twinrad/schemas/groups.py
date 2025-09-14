@@ -1,4 +1,5 @@
-from typing import Literal
+from typing import List, Literal
+
 from twinrad.schemas.agents import AgentConfig
 from twinrad.schemas.clients import ClientConfig, ModelConfig
 
@@ -20,3 +21,5 @@ class DebateRoomConfig(RoomConfig):
         "GoalVsGoalFlow",
         "FullSimFlow"
     ]
+    required_frequency: int = 3
+    termination_match_strings: List[str] = ['"terminate_debate": true']

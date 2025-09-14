@@ -30,13 +30,14 @@ class DebateGroupChat(BaseGroupChat):
     def _parse_message(self, message: Message):
         content = message.content
         self.logger.debug(f"Parsing message content:\n{content}")
-        split_string_list = re.split(r"(final\s*response|最終回應):?[\s#]*", content, flags=re.IGNORECASE)
-        self._messages.append(Message(role=message.role, content=split_string_list[-1], name=message.name))
-        self._chain_of_thoughts.append(Message(
-            role=message.role,
-            content=self._parse_chain_of_thoughts(''.join(split_string_list[:-1])),
-            name=message.name
-        ))
+        self._messages.append(Message(role=message.role, content=content, name=message.name))
+        # split_string_list = re.split(r"(final\s*response|最終回應):?[\s#]*", content, flags=re.IGNORECASE)
+        # self._messages.append(Message(role=message.role, content=split_string_list[-1], name=message.name))
+        # self._chain_of_thoughts.append(Message(
+        #     role=message.role,
+        #     content=self._parse_chain_of_thoughts(''.join(split_string_list[:-1])),
+        #     name=message.name
+        # ))
 
     def _parse_chain_of_thoughts(self, chain_of_thoughts: str) -> str:
         self.logger.debug(f"Parsing chain of thoughts:\n{chain_of_thoughts}")

@@ -14,16 +14,10 @@ class DebateBaseFlow(BaseFlow):
         super().__init__(group_chat=group_chat)
         self.turn_index = 0
         self.turn_size = len(self.turn_list)
-        self.referee_name = DebateAgentName.REFEREE_AGENT.value
 
     def select_speaker(self, messages: List[Message]) -> BaseAgent:
-        # Check if the referee just spoke.
-        if self.turn_index == 0 or messages[-1].name == self.referee_name:
-            next_speaker_name = self.turn_list[self.turn_index % self.turn_size]
-            self.turn_index += 1
-        # If the last speaker was not the referee, it's their turn to check.
-        else:
-            next_speaker_name = self.referee_name
+        next_speaker_name = self.turn_list[self.turn_index % self.turn_size]
+        self.turn_index += 1
 
         return self.group_chat.agents[self.agent_index_map[next_speaker_name]]
 
@@ -49,12 +43,16 @@ class FullSimFlow(DebateBaseFlow):
     turn_list = [
         DebateAgentName.STRATEGIC_AGREE_DEBATE_AGENT.value,
         DebateAgentName.LOGIC_CHAMPION_DISAGREE_AGENT.value,
-        DebateAgentName.CONFIDENTIALITY_ADVOCATE_AGREE_AGENT.value,
+        DebateAgentName.SECURITY_ADVOCATE_AGENT.value,
         DebateAgentName.DATA_PRAGMATIST_DISAGREE_AGENT.value,
+        DebateAgentName.ECONOMICSTRATEGISTAGENT.value,
         DebateAgentName.RIGOROUS_LOGICAL_REVIEWER.value,
+        DebateAgentName.REFEREE_AGENT.value,
         DebateAgentName.STRATEGIC_DISAGREE_DEBATE_AGENT.value,
         DebateAgentName.LOGIC_CHAMPION_AGREE_AGENT.value,
         DebateAgentName.CONFIDENTIALITY_ADVOCATE_DISAGREE_AGENT.value,
         DebateAgentName.DATA_PRAGMATIST_AGREE_AGENT.value,
+        DebateAgentName.ECONOMICDISMANTLINGAGENT.value,
         DebateAgentName.RIGOROUS_LOGICAL_REVIEWER.value,
+        DebateAgentName.REFEREE_AGENT.value,
     ]

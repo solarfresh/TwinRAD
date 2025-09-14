@@ -32,7 +32,8 @@ class GenericGroupManager(BaseGroupManager):
         """
         Runs the main chat execution loop until the termination condition is met.
         """
-        while not self.terminator.should_end(self.group_chat.messages, self.current_round):
+        response = self.group_chat.messages[-1]
+        while not self.terminator.should_end(response, self.current_round):
             # 1. Select the next speaker
             speaker = self.workflow.select_speaker(
                 messages=self.group_chat.messages
