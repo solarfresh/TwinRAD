@@ -19,7 +19,8 @@ class DebateRoomConfig(RoomConfig):
     workflow: Literal[
         "BaselineVsDeceptionFlow",
         "GoalVsGoalFlow",
-        "FullSimFlow"
+        "FreeDebater",
+        "FullSimFlow",
     ]
     required_frequency: int = 3
     termination_match_strings: List[str] = ['"terminate_debate": true']

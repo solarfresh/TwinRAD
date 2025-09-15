@@ -39,6 +39,22 @@ class GoalVsGoalFlow(DebateBaseFlow):
         DebateAgentName.DATA_PRAGMATIST_DISAGREE_AGENT.value,
     ]
 
+
+class FreeDebater(DebateBaseFlow):
+    turn_list = [
+        DebateAgentName.DEBATE_PROPONENT_AGREE_AGENT.value,
+        DebateAgentName.DEBATE_PROPONENT_DISAGREE_AGENT.value,
+        DebateAgentName.RIGOROUS_LOGICAL_REVIEWER.value,
+        DebateAgentName.DEBATE_OFFENSIVE_AGREE_AGENT.value,
+        DebateAgentName.DEBATE_OFFENSIVE_DISAGREE_AGENT.value,
+        DebateAgentName.RIGOROUS_LOGICAL_REVIEWER.value,
+        DebateAgentName.DEBATE_STRATEGIST_AGREE_AGENT.value,
+        DebateAgentName.DEBATE_STRATEGIST_DISAGREE_AGENT.value,
+        DebateAgentName.RIGOROUS_LOGICAL_REVIEWER.value,
+        DebateAgentName.REFEREE_AGENT.value,
+    ]
+
+
 class FullSimFlow(DebateBaseFlow):
     turn_list = [
         DebateAgentName.STRATEGIC_AGREE_DEBATE_AGENT.value,
