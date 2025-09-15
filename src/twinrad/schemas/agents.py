@@ -6,6 +6,7 @@ from pydantic import BaseModel
 class AgentConfig(BaseModel):
     name: str
     model: str
+    lang: str = 'en'
     system_message: str | None = None
     cot_message: str | None = None
 
@@ -32,14 +33,27 @@ class AgentName(Enum):
     # PROMPT_GENERATOR = auto()
 
 
-class DeceptiveAgentName(Enum):
+class DebateAgentName(Enum):
     BASELINE_AGREE_AGENT = 'BaselineAgreeAgent'
     BASELINE_DISAGREE_AGENT = 'BaselineDisagreeAgent'
-    REFEREE_AGENT = 'RefereeAgent'
-    LOGIC_CHAMPION_AGREE_AGENT = 'LogicChampionAgreeAgent'
-    LOGIC_CHAMPION_DISAGREE_AGENT = 'LogicChampionDisagreeAgent'
-    STOIC_NEUTRAL_AGENT = 'StoicNeutralAgent'
     CONFIDENTIALITY_ADVOCATE_AGREE_AGENT = 'ConfidentialityAdvocateAgreeAgent'
     CONFIDENTIALITY_ADVOCATE_DISAGREE_AGENT = 'ConfidentialityAdvocateDisagreeAgent'
     DATA_PRAGMATIST_AGREE_AGENT = 'DataPragmatistAgreeAgent'
     DATA_PRAGMATIST_DISAGREE_AGENT = 'DataPragmatistDisagreeAgent'
+    DEBATE_OFFENSIVE_AGREE_AGENT = 'DebateOffensiveAgreeAgent'
+    DEBATE_OFFENSIVE_DISAGREE_AGENT = 'DebateOffensiveDisagreeAgent'
+    DEBATE_PROPONENT_AGREE_AGENT = 'DebateProponentAgreeAgent'
+    DEBATE_PROPONENT_DISAGREE_AGENT = 'DebateProponentDisagreeAgent'
+    DEBATE_STRATEGIST_AGREE_AGENT = 'DebateStrategistAgreeAgent'
+    DEBATE_STRATEGIST_DISAGREE_AGENT = 'DebateStrategistDisagreeAgent'
+    DISPASSIONATE_ANALYST = 'DispassionateAnalyst'
+    ECONOMICDISMANTLINGAGENT = 'EconomicDismantlingAgent'
+    ECONOMICSTRATEGISTAGENT = 'EconomicStrategistAgent'
+    LOGIC_CHAMPION_AGREE_AGENT = 'LogicChampionAgreeAgent'
+    LOGIC_CHAMPION_DISAGREE_AGENT = 'LogicChampionDisagreeAgent'
+    REFEREE_AGENT = 'RefereeAgent'
+    RIGOROUS_LOGICAL_REVIEWER = 'RigorousLogicalReviewer'
+    SECURITY_ADVOCATE_AGENT = 'SecurityAdvocateAgent'
+    STOIC_NEUTRAL_AGENT = 'StoicNeutralAgent'
+    STRATEGIC_AGREE_DEBATE_AGENT = 'StrategicAgreeDebateAgent'
+    STRATEGIC_DISAGREE_DEBATE_AGENT = 'StrategicDisagreeDebateAgent'

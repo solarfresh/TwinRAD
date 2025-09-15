@@ -9,12 +9,9 @@ class DataAnalyst(BaseAgent):
     Acts as a data interpretation and synthesis expert. This agent's primary responsibility
     is to analyze structured data, identify patterns, and present insights.
     """
-    def get_system_message(self, config: AgentConfig) -> str:
-        model = config.model
-
-        # Define prompts for different model families
-        prompt_map = {
-            'gemini': (
+    def get_system_message_map(self) -> Dict[str, str]:
+        return {
+            'en': (
                 "You are a **Data Analyst**, an expert in structured data interpretation. Your sole purpose is to analyze and synthesize data provided to you. Your skills include statistical analysis, pattern recognition, and trend identification. You are an expert at translating raw data into clear, concise insights and reports.\n\n"
                 "**Your constraints are strict:**\n\n"
                 "* You **do not** gather new data; you only work with the data provided to you.\n"
@@ -32,14 +29,6 @@ class DataAnalyst(BaseAgent):
             'default': "You are a tool-use expert. Your sole function is to process and analyze data using your internal analytical capabilities or by generating a concise summary."
         }
 
-        # Check if the model name contains a key from the prompt map
-        for key, prompt_content in prompt_map.items():
-            if key in model.lower():
-                return prompt_content
-
-        # Fallback if no specific model or family is matched
-        return prompt_map['default']
-
 
 class FactChecker(BaseAgent):
     """
@@ -48,7 +37,7 @@ class FactChecker(BaseAgent):
     """
     def get_system_message_map(self) -> Dict[str, str]:
         return {
-            'gemini': (
+            'en': (
                 "You are a **Fact Checker**, an expert in verifying information. Your sole purpose is to analyze claims and determine their veracity. You must be impartial, evidence-based, and precise. You will be provided with claims and access to tools for data retrieval. Your output must be a clear verdict supported by evidence.\n\n"
                 "**Your constraints are strict:**\n\n"
                 "* You **must not** make assumptions or state opinions.\n"

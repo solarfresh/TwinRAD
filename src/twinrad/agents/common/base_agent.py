@@ -81,10 +81,4 @@ class BaseAgent(ABC):
         if msg_map is None:
             return None
 
-        model = self.config.model
-
-        for key, prompt_content in msg_map.items():
-            if key in model.lower():
-                return prompt_content
-
-        return msg_map['default']
+        return msg_map.get(self.config.lang, 'default')

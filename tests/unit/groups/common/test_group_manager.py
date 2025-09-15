@@ -15,14 +15,13 @@ from twinrad.workflows.common.termination import MaxRoundsCondition
 class MockBaseGroupChat(BaseGroupChat):
 
     def __init__(self):
+        self._chat_history = []
         self._messages = []
 
     def add_message(self, message):
+        self._chat_history.append(message)
         self._messages.append(message)
 
-    def get_messages(self) -> List[Message]:
-        """Returns the full conversation history."""
-        return self._messages
 
 class MockBaseFlow(BaseFlow):
 
@@ -52,6 +51,7 @@ def mock_config():
     base_room_config = MagicMock(spec=RoomConfig)
     base_room_config.name = 'Test'
     base_room_config.max_rounds = 3
+    base_room_config.turn_limit = 100
     return base_room_config
 
 # Test the BaseRoom class
@@ -131,7 +131,7 @@ async def test_base_room_run_chat_error_handling(base_room):
     base_room.terminator.max_rounds = 3
 
     # Mock the agent's generate method to raise an exception on the first call
-    mock_agents[1].generate = AsyncMock(side_effect=Exception("API Error"))
+    mock_agents[0].generate = AsyncMock(side_effect=Exception("API Error"))
 
     messages = await base_room.run_chat()
 

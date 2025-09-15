@@ -29,6 +29,7 @@ class OpenAIHandler(BaseHandler):
             messages_payload = []
             if request.system_message:
                 messages_payload.append({"role": "system", "content": request.system_message})
+
             for msg in request.messages:
                 messages_payload.append({"role": msg.role, "content": msg.content})
 
