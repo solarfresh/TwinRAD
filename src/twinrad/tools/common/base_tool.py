@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict
+
 from twinrad.configs.logging_config import setup_logging
+from twinrad.schemas.tools import ToolConfig
 
 
 class BaseTool(ABC):
@@ -11,7 +13,8 @@ class BaseTool(ABC):
     integrated with an agent.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, config: ToolConfig = ToolConfig()) -> None:
+        self.config = config
         self.logger = setup_logging(name=f"[{self.__class__.__name__}]")
 
     @abstractmethod

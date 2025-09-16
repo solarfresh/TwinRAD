@@ -6,6 +6,7 @@ from twinrad.clients.client_manager import ClientManager
 from twinrad.schemas.agents import AgentConfig
 from twinrad.schemas.clients import LLMRequest, LLMResponse
 from twinrad.schemas.messages import Message
+from twinrad.schemas.tools import ToolConfig
 from twinrad.tools.knowledge.retrieval import (GoogleSearchTool,
                                                PageLoaderTool, WebScrapingTool)
 
@@ -79,7 +80,11 @@ class SearchAgent(BaseAgent):
     """
     def __init__(self, config: AgentConfig, client_manager: ClientManager):
         super().__init__(config, client_manager)
-        self.tool = GoogleSearchTool()
+        self.tool = GoogleSearchTool(config=ToolConfig(
+            google_search_engine_id=self.config.google_search_engine_id,
+            google_search_engine_api_key=self.config.google_search_engine_api_key,
+            google_search_engine_base_url=self.config.google_search_engine_base_url,
+        ))
 
     def get_system_message_map(self) -> Dict[str, str]:
         return {'default': "This function is not adopted."}

@@ -1,9 +1,9 @@
 from enum import Enum
 
-from pydantic import BaseModel
+from twinrad.schemas.tools import ToolConfig
 
 
-class AgentConfig(BaseModel):
+class AgentConfig(ToolConfig):
     name: str
     model: str
     lang: str = 'en'

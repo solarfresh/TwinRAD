@@ -5,7 +5,7 @@ import httpx
 from playwright.async_api import async_playwright
 
 from twinrad.configs.settings import settings
-from twinrad.tools.common.base_tool import BaseTool
+from twinrad.tools.common.base_tool import BaseTool, ToolConfig
 
 
 class GoogleSearchTool(BaseTool):
@@ -15,12 +15,12 @@ class GoogleSearchTool(BaseTool):
     API Documentation:
         https://developers.google.com/custom-search/v1/reference/rest/v1/cse/list
     """
-    def __init__(self):
-        super().__init__()
+    def __init__(self, config: ToolConfig):
+        super().__init__(config=config)
         # These should be loaded from a secure configuration or environment variables
-        self.api_key = settings.google_search_engine_api_key
-        self.cx = settings.google_search_engine_id
-        self.base_url = settings.google_search_engine_base_url
+        self.api_key = self.config.google_search_engine_api_key
+        self.cx = self.config.google_search_engine_id
+        self.base_url = self.config.google_search_engine_base_url
         self.client = httpx.AsyncClient()
 
     async def run(self, **kwargs) -> Any:
