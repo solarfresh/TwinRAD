@@ -8,6 +8,8 @@ class AgentConfig(ToolConfig):
     model: str
     lang: str = 'en'
     system_message: str | None = None
+    # Handle tool use first if enabled
+    tool_use: bool = False
     cot_message: str | None = None
 
 
