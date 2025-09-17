@@ -1,10 +1,10 @@
+import asyncio
 import json
 from typing import Any, Dict, List
 
 import httpx
 from playwright.async_api import async_playwright
 
-from twinrad.configs.settings import settings
 from twinrad.tools.common.base_tool import BaseTool, ToolConfig
 
 
@@ -61,7 +61,7 @@ class GoogleSearchTool(BaseTool):
                     "snippet": result.get("snippet")
                 })
 
-            return json.dumps(processed_results)
+            return json.dumps(processed_results, ensure_ascii=False)
 
         except httpx.HTTPStatusError as e:
             error_message = f"HTTP error during Google search: {e.response.text}"
@@ -218,21 +218,74 @@ class WebScrapingTool(BaseTool):
     A concrete tool implementation for the WebScout agent.
     """
 
-    async def run(self, **kwargs) -> Any:
+    async def run(self, url_contents: str) -> str:
         """
-        Executes the web scraping task.
-
-        Args:
-            html_content (str): The raw HTML content to scrape.
-            query (str): The CSS selector to identify the data to be scraped.
+        Executes the web scraping task and returns a JSON string
+        containing a list of parsed outputs.
         """
-        url = kwargs.get('url', '')
-        self.logger.debug(f"Running WebScoutTool with url: {url}")
-        if not url:
-            return json.dumps({"error": "Missing 'url' parameter."})
+        self.logger.debug(f"Running WebScoutTool with url_contents: {url_contents}")
 
-        async with PlaywrightWrapper() as playwright:
-            return await playwright.scrape_all_text_from_url(url=url)
+        if not url_contents:
+            return json.dumps({"error": "Missing 'url_contents' parameter."})
+
+        try:
+            urls_to_scrape = json.loads(url_contents)
+            if not isinstance(urls_to_scrape, list):
+                return json.dumps({"error": "Input must be a list of URLs."})
+        except json.JSONDecodeError:
+            return json.dumps({"error": "Invalid JSON format for 'url_contents'."})
+
+        tasks = []
+        for url_data in urls_to_scrape:
+            if isinstance(url_data, dict) and 'url' in url_data:
+                tasks.append(self.scrape_single_url(url=url_data['url']))
+            else:
+                self.logger.warning(f"Skipping invalid URL entry: {url_data}")
+
+        # Run all scraping tasks concurrently
+        scraped_results: List[str | BaseException] = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # Parse each individual JSON string result
+        final_results = self.postprocess_scraped_results(scraped_results)
+
+        # Return the final list of parsed results as a single JSON string
+        return json.dumps(final_results, ensure_ascii=False)
+
+    async def scrape_single_url(self, url: str):
+        """Scrapes a single URL using a dedicated Playwright instance."""
+        try:
+            async with PlaywrightWrapper() as playwright:
+                return await playwright.scrape_all_text_from_url(url)
+        except Exception as e:
+            self.logger.error(f"Error scraping {url}: {e}")
+            return {"error": str(e)}
+
+    def postprocess_scraped_results(self, scraped_results: List[str | BaseException]) -> List[Dict[str, Any]]:
+        """
+        Parse each individual JSON string result
+        """
+
+        final_results: List[Dict[str, Any]] = []
+        for result in scraped_results:
+            if isinstance(result, BaseException):
+                self.logger.error(f"An error occurred during scraping: {result}")
+                final_results.append({"error": str(result)})
+            else:
+                try:
+                    # Parse the JSON string from the scraping function
+                    parsed_result = json.loads(result)
+                    if parsed_result.get('error', ''):
+                        continue
+
+                    final_results.append(json.loads(result))
+                except json.JSONDecodeError as e:
+                    self.logger.error(f"Failed to parse JSON from scraped content: {result}. Error: {e}")
+                    final_results.append({"error": "Failed to parse scraped content as JSON."})
+                except Exception as e:
+                    self.logger.error(f"An unexpected error occurred: {e}")
+                    final_results.append({"error": f"An unexpected error occurred: {str(e)}"})
+
+        return final_results
 
     def get_name(self) -> str:
         return "scrape_web_data"
@@ -244,10 +297,10 @@ class WebScrapingTool(BaseTool):
         return {
             "type": "object",
             "properties": {
-                "url": {
+                "url_contents": {
                     "type": "string",
-                    "description": "The url of the webpage to scrape."
+                    "description": "A JSON string containing a list of URLs to scrape."
                 }
             },
-            "required": ["url"]
+            "required": ["url_contents"]
         }

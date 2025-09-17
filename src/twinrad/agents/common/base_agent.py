@@ -8,7 +8,7 @@ from twinrad.configs.logging_config import setup_logging
 from twinrad.schemas.agents import AgentConfig
 from twinrad.schemas.clients import LLMRequest, LLMResponse
 from twinrad.schemas.messages import Message
-from twinrad.tools.common.base_tool import BaseTool, ToolConfig
+from twinrad.tools.common.base_tool import BaseTool
 
 
 class BaseAgent(ABC):
@@ -19,8 +19,6 @@ class BaseAgent(ABC):
     The agent's specific behavior should be defined in subclasses by implementing their
     role within an AutoGen GroupChat or other conversational flows.
     """
-
-    tool: BaseTool | None = None
 
     def __init__(self, config: AgentConfig, client_manager: ClientManager):
 
@@ -88,7 +86,7 @@ class BaseAgent(ABC):
                 self.logger.error(f"Error processing tool message from LLM: {e}")
                 return Message(role='assistant', content="Error: Failed to process tool call.", name=self.name)
         else:
-            tool_call_data  = self.get_tool_call()
+            tool_call_data  = self.get_tool_call(messages=messages)
 
         tool_name = tool_call_data.get('tool', 'default')
         tool = self.get_tool_map()[tool_name]
@@ -122,7 +120,7 @@ class BaseAgent(ABC):
         """
         return None
 
-    def get_tool_call(self) -> Dict[str, Any]:
+    def get_tool_call(self, messages: List[Message]) -> Dict[str, Any]:
         return {}
 
     def get_tool_message_map(self) -> Dict[str, str] | None:
