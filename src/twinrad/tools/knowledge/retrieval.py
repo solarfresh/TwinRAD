@@ -218,13 +218,13 @@ class WebScrapingTool(BaseTool):
     A concrete tool implementation for the WebScout agent.
     """
 
-    async def run(self, url_contents: str) -> str:
+    async def run(self, **kwargs) -> str:
         """
         Executes the web scraping task and returns a JSON string
         containing a list of parsed outputs.
         """
+        url_contents = kwargs.get('url_contents', '')
         self.logger.debug(f"Running WebScoutTool with url_contents: {url_contents}")
-
         if not url_contents:
             return json.dumps({"error": "Missing 'url_contents' parameter."})
 

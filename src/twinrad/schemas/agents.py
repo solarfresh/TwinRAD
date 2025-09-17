@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Literal
 
 from twinrad.schemas.tools import ToolConfig
 
@@ -8,8 +9,7 @@ class AgentConfig(ToolConfig):
     model: str
     lang: str = 'en'
     system_message: str | None = None
-    # Handle tool use first if enabled
-    tool_use: bool = False
+    tool_use: Literal['TOOL_USE_DIRECT', 'TOOL_USE_AND_PROCESS', 'NO_TOOL_USE'] = 'NO_TOOL_USE'
     cot_message: str | None = None
 
 

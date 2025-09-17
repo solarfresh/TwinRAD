@@ -44,9 +44,14 @@ class BaseAgent(ABC):
         last_message = copied_messages[-1]
 
         try:
-            if self.config.tool_use:
+            if self.config.tool_use == 'TOOL_USE_DIRECT':
                 tool_output_message = await self.generate_tool_message(copied_messages)
                 return tool_output_message
+
+            if self.config.tool_use == 'TOOL_USE_AND_PROCESS':
+                last_message = await self.generate_tool_message(copied_messages)
+                self.logger.debug(f"Tool output: {last_message.content}")
+                copied_messages.append(last_message)
 
             cot_to_append = self.config.cot_message or self._message_mapper(self.get_cot_message_map())
             if cot_to_append:
@@ -84,7 +89,7 @@ class BaseAgent(ABC):
                 tool_call_data = self.postprocess_tool_output(response.text)
             except Exception as e:
                 self.logger.error(f"Error processing tool message from LLM: {e}")
-                return Message(role='assistant', content="Error: Failed to process tool call.", name=self.name)
+                raise e
         else:
             tool_call_data  = self.get_tool_call(messages=messages)
 
@@ -100,7 +105,7 @@ class BaseAgent(ABC):
             return Message(role='assistant', content=tool_output, name=self.name)
         except Exception as e:
             self.logger.error(f"Error executing tool '{tool_name}': {e}")
-            return Message(role='assistant', content=f"Error: Failed to execute tool '{tool_name}'.", name=self.name)
+            raise e
 
     @abstractmethod
     def get_system_message_map(self) -> Dict[str, str]:

@@ -81,7 +81,7 @@ class SearchAgent(BaseAgent):
     """
     def __init__(self, config: AgentConfig, client_manager: ClientManager):
         super().__init__(config, client_manager)
-        self.config.tool_use = True
+        self.config.tool_use = 'TOOL_USE_DIRECT'
         self.tool = GoogleSearchTool(config=ToolConfig(
             google_search_engine_id=self.config.google_search_engine_id,
             google_search_engine_api_key=self.config.google_search_engine_api_key,
@@ -112,6 +112,7 @@ class SelectorFinder(BaseAgent):
     """
     def __init__(self, config: AgentConfig, client_manager: ClientManager):
         super().__init__(config, client_manager)
+        self.config.tool_use = 'TOOL_USE_AND_PROCESS'
         self.tool = PageLoaderTool()
 
     def get_tool_message_map(self) -> Dict[str, str]:
@@ -216,7 +217,7 @@ class WebScout(BaseAgent):
     """
     def __init__(self, config: AgentConfig, client_manager: ClientManager):
         super().__init__(config, client_manager)
-        self.config.tool_use = True
+        self.config.tool_use = 'TOOL_USE_DIRECT'
         self.tool = WebScrapingTool()
 
     def get_system_message_map(self) -> Dict[str, str]:
