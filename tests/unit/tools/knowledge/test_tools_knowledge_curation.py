@@ -34,12 +34,12 @@ def mind_map_mock_data() -> Dict[str, Any]:
             "type": "CentralIdea",
             "node_id": node_ids["central_idea"]
         },
-        "branches": [
+        "main_topics": [
             {
                 "label": "Technological Hurdles",
                 "type": "MainTopic",
                 "node_id": node_ids["main_topic_1"],
-                "sub_branches": [
+                "sub_topics": [
                     {
                         "label": "Intermittency",
                         "type": "SubTopic",
@@ -76,9 +76,6 @@ async def test_run_initial_build_success(mind_map_mock_config, mind_map_mock_dat
     json_input = json.dumps(mind_map_mock_data)
 
     response = await builder.run(json_output=json_input)
-    if builder.graph.central_idea is None:
-        assert False, "CentralIdea not be None after initial run."
-
     response_data = json.loads(response)
 
     # 1. Check the response message
@@ -86,7 +83,12 @@ async def test_run_initial_build_success(mind_map_mock_config, mind_map_mock_dat
 
     # 2. Check the graph's state
     assert isinstance(builder.graph, MindMap)
-    assert builder.graph.central_idea.label == "Renewable Energy Challenges"
+
+    central_idea = builder.graph.central_ideas.get('Renewable Energy Challenges')
+    if central_idea is None:
+        assert False, "CentralIdea not be None after initial run."
+
+    assert central_idea.label == "Renewable Energy Challenges"
 
     # 3. Check the number of nodes and relationships
     assert len(builder.graph.all_nodes) == 5
@@ -100,17 +102,22 @@ async def test_run_incremental_update(mind_map_mock_config, mind_map_mock_data):
     # First run (initial build)
     await builder.run(json_output=json.dumps(mind_map_mock_data))
 
-    if builder.graph.central_idea is None:
+    central_idea = builder.graph.central_ideas.get('Renewable Energy Challenges')
+    if central_idea is None:
         assert False, "CentralIdea not be None after initial run."
 
     # Prepare a new JSON with additional data
     new_data = {
-        "branches": [
+        "central_idea": {
+            "label": "Renewable Energy Challenges",
+            "type": "CentralIdea"
+        },
+        "main_topics": [
             {
                 "label": "Economic Factors",
                 "type": "MainTopic",
                 "node_id": str(uuid.uuid4()),
-                "sub_branches": [
+                "sub_topics": [
                     {
                         "label": "High Initial Costs",
                         "type": "SubTopic",
@@ -122,8 +129,8 @@ async def test_run_incremental_update(mind_map_mock_config, mind_map_mock_data):
         ],
         "relationships": [
             {
-                "source": builder.graph.central_idea.node_id,
-                "target": builder.graph.central_idea.main_topics.pop().node_id, # Pop a node to get an existing one
+                "source": central_idea.node_id,
+                "target": central_idea.main_topics.pop().node_id, # Pop a node to get an existing one
                 "type": "LEADS_TO"
             }
         ]

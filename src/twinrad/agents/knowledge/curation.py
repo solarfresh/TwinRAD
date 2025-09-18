@@ -1,7 +1,14 @@
-from typing import Dict, List
+import json
+from copy import deepcopy
+from typing import Any, Dict, List
 
 from twinrad.agents.common.base_agent import BaseAgent
+from twinrad.clients.client_manager import ClientManager
 from twinrad.schemas.agents import AgentConfig
+from twinrad.schemas.messages import Message
+from twinrad.schemas.tools import ToolConfig
+from twinrad.tools.common.base_tool import BaseTool
+from twinrad.tools.knowledge.curation import MindMapGraphBuilder
 
 
 class DataAnalyst(BaseAgent):
@@ -52,4 +59,49 @@ class FactChecker(BaseAgent):
                 "**Example Task:** 'Verify the claim: The Eiffel Tower was originally built for the 1889 World's Fair.'"
             ),
             'default': "You are a tool-use expert for information validation. You will receive claims and must use your tools to find evidence to support or refute them, and then provide a conclusive verdict."
+        }
+
+
+class GraphBuilderAgent(BaseAgent):
+
+    def __init__(self, config: AgentConfig, client_manager: ClientManager):
+        super().__init__(config, client_manager)
+        self.config.tool_use = 'TOOL_USE_DIRECT'
+        self.tool = MindMapGraphBuilder(config=ToolConfig())
+
+    async def generate(self, messages: List[Message]) -> Message:
+        last_message = deepcopy(messages[-1])
+        message_content = json.loads(last_message.content)
+        for content in message_content:
+            data_payload = content.get('data', '')
+            if not data_payload:
+                continue
+
+            mind_map_message = await self.generate_llm_message([Message(role='user', content=data_payload, name=self.name)])
+            mind_map_json_output = self.postprocess_llm_output(mind_map_message.content)
+            tool_output = await self.tool.run(json_output=mind_map_json_output)
+
+        return Message(role='assistant', content=tool_output, name=self.name)
+
+    def postprocess_llm_output(self, message_content: str) -> str:
+        self.logger.debug(f'message_content: {message_content}')
+        return message_content.replace('```json\n', '').replace('\n```', '')
+
+    def get_system_message_map(self) -> Dict[str, str]:
+        return {
+            'en': "You are a master at analyzing documents and extracting a complete mind map structure. Your task is to process the following text and create a JSON object that strictly represents a mind map based on the provided schema. Do not include any extra text or conversation. Only output the JSON object.\n\nThe output must contain:\n1. A single \"central_idea\" with a \"label\" and \"type\".\n2. An array of \"main_topics\", each representing a \"MainTopic\" with its own \"label\", \"type\", and \"sub_topics\" array.\n3. Within each \"sub_branch\", an array of \"keywords\", each with its own \"label\" and \"type\".\n4. An optional \"relationships\" array at the end for non-hierarchical connections.\n\nThe available entity types are: \"CentralIdea\", \"MainTopic\", \"SubTopic\", and \"Keyword\".\nThe available relationship types are: \"SUPPORTS\", \"LEADS_TO\", \"RELATED_TO\".\n\nJSON Schema:\n{\n  \"central_idea\": {\n    \"label\": \"string\",\n    \"type\": \"string\"\n  },\n  \"branches\": [\n    {\n      \"label\": \"string\",\n      \"type\": \"string\",\n      \"sub_branches\": [\n        {\n          \"label\": \"string\",\n          \"type\": \"string\",\n          \"keywords\": [\n            {\n              \"label\": \"string\",\n              \"type\": \"string\"\n            }\n          ]\n        }\n      ]\n    }\n  ],\n  \"relationships\": [\n    {\n      \"source\": \"string\",\n      \"target\": \"string\",\n      \"type\": \"string\"\n    }\n  ]\n}",
+            'default': "You are a tool-use expert for information validation. You will receive claims and must use your tools to find evidence to support or refute them, and then provide a conclusive verdict."
+        }
+
+    def get_tool_call(self, messages: List[Message]) -> Dict[str, Any]:
+        return {
+            "tool": self.tool.get_name(),
+            "args": {
+                "query": messages[-1].content
+            }
+        }
+
+    def get_tool_map(self) -> Dict[str, BaseTool | None]:
+        return {
+            self.tool.get_name(): self.tool
         }

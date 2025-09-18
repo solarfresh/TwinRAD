@@ -1,4 +1,4 @@
-from typing import List, Literal, Optional, Set, Tuple
+from typing import Any, Dict, List, Literal, Set, Tuple
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
@@ -60,12 +60,51 @@ class CentralIdeaNode(Node):
 
 
 class MindMap(BaseModel):
-    central_idea: Optional[CentralIdeaNode] = None
+    central_ideas: Dict[str, CentralIdeaNode] = Field(default_factory=dict)
     all_nodes: Set[Tuple[str, str]] = Field(default_factory=set)
     all_relationships: Set[Tuple[str, str]] = Field(default_factory=set)
+    unique_central_ideas: Set[Tuple[str, str]] = Field(default_factory=set, exclude=True)
 
     def add_node(self, node: Node):
         self.all_nodes.add((node.label, node.type))
 
     def add_relationship(self, relationship: Edge):
         self.all_relationships.add((relationship.source, relationship.target))
+
+    def add_central_idea(self, central_idea: CentralIdeaNode):
+        if (central_idea.label, central_idea.type) not in self.unique_central_ideas:
+            self.central_ideas[central_idea.label] = central_idea
+            self.unique_central_ideas.add((central_idea.label, central_idea.type))
+
+    def add_central_idea_data(self, data: Dict[str, Any]):
+        if not data:
+            return None
+
+        central_idea_data = {**data}.get('central_idea', {})
+        central_idea = CentralIdeaNode(**central_idea_data)
+
+        # If central idea already exists, return the existing one
+        # else create a new one
+        self.add_central_idea(central_idea)
+        self.add_node(central_idea)
+        central_idea = self.central_ideas.get(central_idea.label)
+        if central_idea is None:
+            raise ValueError("Central idea should have been added.")
+
+        for branch_data in data.get('main_topics', []):
+            main_topic = MainTopicNode(**branch_data)
+            central_idea.add_main_topic(main_topic)
+            self.add_node(main_topic)
+
+            for sub_branch_data in branch_data.get('sub_topics', []):
+                sub_topic = SubTopicNode(**sub_branch_data)
+                main_topic.add_sub_topic(sub_topic)
+                self.add_node(sub_topic)
+
+                for keyword_data in sub_branch_data.get('keywords', []):
+                    keyword = KeywordNode(**keyword_data)
+                    sub_topic.add_keyword(keyword)
+                    self.add_node(keyword)
+
+        for relationship_data in data.get('relationships', []):
+            self.all_relationships.add((relationship_data.get('source'), relationship_data.get('target')))
