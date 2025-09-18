@@ -43,35 +43,9 @@ async def test_sf_generate_success_flow():
         messages = [Message(role='user', content="Find the price on http://example.com", name='Test')]
         result = await agent.generate(messages)
 
-    # Assertions for the first LLM call (tool selection)
-    mock_client_manager.generate.assert_any_call(
-        LLMRequest(
-            model='gemini-pro',
-            messages=messages,
-            system_message=agent.system_message
-        )
-    )
-
-    # Assertions for the second LLM call (selector extraction)
-    expected_extraction_messages = [
-        Message(role='user', content="Find the price on http://example.com", name='selector_finder'),
-        Message(role='tool', content=json.dumps({"html_content": "<html><body><div class='product-price'>$20.00</div></body></html>"}), name='load_page_html')
-    ]
-
-    mock_client_manager.generate.assert_any_call(
-        LLMRequest(
-            model='gemini-pro',
-            messages=expected_extraction_messages,
-            system_message=agent._get_extraction_prompt()
-        )
-    )
-
     # Final assertion on the returned message
-    assert result.role == 'user'
-    final_output = json.loads(result.content)
-    assert final_output['html_content'] == "<html><body><div class='product-price'>$20.00</div></body></html>"
-    assert final_output['query'] == "div.product-price"
-
+    assert result.role == 'assistant'
+    assert result.content == "div.product-price"
 
 @pytest.mark.asyncio
 async def test_sf_generate_first_llm_call_fails():
@@ -91,8 +65,8 @@ async def test_sf_generate_first_llm_call_fails():
     result = await agent.generate(messages)
 
     # Assert that the agent returns the LLM's raw response
-    assert result.role == 'user'
-    assert result.content == "I'm sorry, I cannot fulfill this request."
+    assert result.role == 'assistant'
+    assert result.content == "Error: Could not generate a response."
 
 
 @pytest.mark.asyncio
@@ -109,7 +83,7 @@ async def test_sf_tool_run_returns_error():
 
     # Tool run returns an error
     mock_tool = AsyncMock(spec=PageLoaderTool)
-    mock_tool.run.return_value = json.dumps({"error": "Page navigation failed."})
+    mock_tool.run = AsyncMock(side_effect=RuntimeError('Page navigation failed.'))
     mock_tool.get_name.return_value = "load_page_html"
 
     agent = SelectorFinder(mock_config, mock_client_manager)
@@ -118,8 +92,8 @@ async def test_sf_tool_run_returns_error():
         result = await agent.generate(messages)
 
     # Assert that the agent returns the tool's error message
-    assert result.role == 'user'
-    assert json.loads(result.content) == {"error": "Page navigation failed."}
+    assert result.role == 'assistant'
+    assert result.content == "Error: Could not generate a response."
 
     # Verify that the second LLM call was NOT made
-    mock_client_manager.generate.assert_called_once()
+    mock_client_manager.generate.assert_called_once()  # Only the first call

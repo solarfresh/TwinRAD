@@ -1,11 +1,13 @@
 import json
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from twinrad.agents.common.base_agent import BaseAgent
 from twinrad.clients.client_manager import ClientManager
 from twinrad.schemas.agents import AgentConfig
 from twinrad.schemas.clients import LLMRequest, LLMResponse
 from twinrad.schemas.messages import Message
+from twinrad.schemas.tools import ToolConfig
+from twinrad.tools.common.base_tool import BaseTool
 from twinrad.tools.knowledge.retrieval import (GoogleSearchTool,
                                                PageLoaderTool, WebScrapingTool)
 
@@ -59,7 +61,7 @@ class QueryDecision(BaseAgent):
 
     def get_system_message_map(self) -> Dict[str, str]:
         return {
-            'gemini': (
+            'en': (
                 "You are a specialized analysis agent. Your task is to analyze the provided search results and scraped content to determine if the user's original query has been fully answered.\n\n"
                 "Your output must be one of two formats:\n"
                 "1. If the information is **insufficient**, provide a new, refined search query as a simple string. For example: 'new query string here'\n"
@@ -79,40 +81,28 @@ class SearchAgent(BaseAgent):
     """
     def __init__(self, config: AgentConfig, client_manager: ClientManager):
         super().__init__(config, client_manager)
-        self.tool = GoogleSearchTool()
+        self.config.tool_use = 'TOOL_USE_DIRECT'
+        self.tool = GoogleSearchTool(config=ToolConfig(
+            google_search_engine_id=self.config.google_search_engine_id,
+            google_search_engine_api_key=self.config.google_search_engine_api_key,
+            google_search_engine_base_url=self.config.google_search_engine_base_url,
+        ))
 
     def get_system_message_map(self) -> Dict[str, str]:
         return {'default': "This function is not adopted."}
 
-    async def generate(self, messages: List[Message]) -> Message:
-        """
-        Processes a user's natural language request by directly performing a Google search.
-        """
-        # Take the user's original query directly.
-        query = messages[-1].content
-        self.logger.info(f"Received query from user: {query}")
+    def get_tool_call(self, messages: List[Message]) -> Dict[str, Any]:
+        return {
+            "tool": self.tool.get_name(),
+            "args": {
+                "query": messages[-1].content
+            }
+        }
 
-        if not query:
-            return Message(role='user', content=json.dumps({"error": "Missing 'query' in user request."}), name=self.name)
-
-        # Directly call the GoogleSearchTool with the query.
-        try:
-            tool_output_json_string = await self.tool.run(query=query)
-            tool_output_dict = json.loads(tool_output_json_string)
-
-            if "error" in tool_output_dict:
-                self.logger.warning("Tool execution failed, returning error to user.")
-                return Message(role='user', content=tool_output_json_string, name=self.name)
-
-            # The search results are the final output of this agent's task.
-            return Message(role='user', content=tool_output_json_string, name=self.name)
-
-        except json.JSONDecodeError:
-            self.logger.warning("Failed to parse tool output, returning error to user.")
-            return Message(role='user', content=json.dumps({"error": "Failed to parse tool output."}), name=self.name)
-        except Exception as e:
-            self.logger.error(f"An unexpected error occurred during search: {e}")
-            return Message(role='user', content=json.dumps({"error": f"An unexpected error occurred: {str(e)}"}), name=self.name)
+    def get_tool_map(self) -> Dict[str, BaseTool | None]:
+        return {
+            self.tool.get_name(): self.tool
+        }
 
 
 class SelectorFinder(BaseAgent):
@@ -122,11 +112,12 @@ class SelectorFinder(BaseAgent):
     """
     def __init__(self, config: AgentConfig, client_manager: ClientManager):
         super().__init__(config, client_manager)
+        self.config.tool_use = 'TOOL_USE_AND_PROCESS'
         self.tool = PageLoaderTool()
 
-    def get_system_message_map(self) -> Dict[str, str]:
+    def get_tool_message_map(self) -> Dict[str, str]:
         return {
-            'gemini': (
+            'en': (
                 "You are a tool-use agent. Your sole purpose is to determine which tool to call based on the user's request. You have access to one tool: load_page_html.\n"
                 "The tool signature is: load_page_html(url: str) -> str\n"
                 "The tool returns the full raw HTML content of the page as a JSON string.\n"
@@ -141,73 +132,12 @@ class SelectorFinder(BaseAgent):
             )
         }
 
-    async def generate(self, messages: List[Message]) -> Message:
-        """
-        Processes a user request to find a CSS selector.
-
-        This agent uses its LLM to decide when to call the PageLoaderTool
-        and then to reason about the HTML to find the correct selector.
-        """
-        # Step 1: LLM determines if it needs to call the tool
-        # The LLM's role is to parse the user's input and generate a tool call
-        original_query = messages[-1].content
-        request = LLMRequest(
-            model=self.model,
-            messages=messages,
-            system_message=self.system_message,
-        )
-        response: LLMResponse = await self.client_manager.generate(request)
-
-        self.logger.info(f'LLM response: {response.text}')
-        # Step 2: Check if the LLM output is a tool call
-        try:
-            tool_call = json.loads(response.text.replace('```json', '').replace('```', '').strip())
-            self.logger.debug(f'tool_call: {tool_call}')
-            if tool_call.get("tool") != self.tool.get_name():
-                raise ValueError("LLM generated an invalid tool call.")
-        except (json.JSONDecodeError, KeyError, ValueError) as e:
-            self.logger.warning(f"Failed to get a valid tool call. Assuming LLM's first response is final: {e}")
-            return Message(role='user', content=response.text, name=self.name)
-
-        # Step 3: Execute the PageLoaderTool to get the HTML
-        tool_output_json_string  = await self.tool.run(**tool_call.get("args", {}))
-
-        try:
-            tool_output_dict = json.loads(tool_output_json_string)
-            if "error" in tool_output_dict:
-                self.logger.warning("Tool execution failed, returning error to user.")
-                return Message(role='user', content=tool_output_json_string, name=self.name)
-            html_content = tool_output_dict.get("html_content", "")
-        except json.JSONDecodeError:
-            self.logger.warning("Failed to parse tool output, returning error to user.")
-            return Message(role='user', content=json.dumps({"error": "Failed to parse tool output."}), name=self.name)
-
-        # Step 4: Use the LLM again to extract the CSS selector from the HTML
-        extraction_messages = [
-            Message(role='user', content=original_query, name=self.name),
-            Message(role='tool', content=json.dumps({"html_content": html_content}), name=self.tool.get_name())
-        ]
-
-        final_request = LLMRequest(
-            model=self.model,
-            messages=extraction_messages,
-            system_message=self._get_extraction_prompt(),
-        )
-        final_response: LLMResponse = await self.client_manager.generate(final_request)
-        final_output = {
-            "html_content": html_content,
-            "query": final_response.text.strip(),  # The final selector
-        }
-
-        return Message(role='user', content=json.dumps(final_output), name=self.name)
-
-    def _get_extraction_prompt(self) -> str:
+    def get_system_message_map(self) -> Dict[str, str]:
         """
         System message for the second LLM call: Selector extraction.
         """
-        model = self.config.model
-        prompt_map = {
-            'gemini': (
+        return {
+            'en': (
                 "You are a specialized agent designed to find CSS selectors. Your task is to analyze the provided HTML content and identify the most specific and accurate CSS selector for the user's request.\n"
                 "Your final output must be **only the CSS selector string**. Do not add any extra text, explanations, or conversation.\n"
                 "If no suitable selector can be found, return 'ERROR: No suitable selector found.'\n"
@@ -218,13 +148,18 @@ class SelectorFinder(BaseAgent):
             )
         }
 
-        # Check if the model name contains a key from the prompt map
-        for key, prompt_content in prompt_map.items():
-            if key in model.lower():
-                return prompt_content
+    def get_tool_call(self, messages: List[Message]) -> Dict[str, Any]:
+        return {
+            "tool": self.tool.get_name(),
+            "args": {
+                "url": messages[-1].content
+            }
+        }
 
-        # Fallback if no specific model or family is matched
-        return prompt_map['default']
+    def get_tool_map(self) -> Dict[str, BaseTool | None]:
+        return {
+            self.tool.get_name(): self.tool
+        }
 
 
 class URLOrchestrator(BaseAgent):
@@ -240,7 +175,7 @@ class URLOrchestrator(BaseAgent):
     def get_system_message_map(self) -> Dict[str, str]:
         # This is a logic-based agent, so the system message is simple and informative.
         return {
-            'gemini': "You are an orchestration agent. Your task is to manage the flow of URLs and ensure no duplicates are processed. Pass each unique URL to the next agent.",
+            'en': "You are an orchestration agent. Your task is to manage the flow of URLs and ensure no duplicates are processed. Pass each unique URL to the next agent.",
             'default': "You are an orchestration agent."
         }
 
@@ -266,7 +201,7 @@ class URLOrchestrator(BaseAgent):
 
             return Message(
                 role='user',
-                content=json.dumps(message_contents),
+                content=json.dumps(message_contents, ensure_ascii=False),
                 name=self.name
             )
 
@@ -282,6 +217,7 @@ class WebScout(BaseAgent):
     """
     def __init__(self, config: AgentConfig, client_manager: ClientManager):
         super().__init__(config, client_manager)
+        self.config.tool_use = 'TOOL_USE_DIRECT'
         self.tool = WebScrapingTool()
 
     def get_system_message_map(self) -> Dict[str, str]:
@@ -289,27 +225,15 @@ class WebScout(BaseAgent):
             'default': 'This is not adopted.'
         }
 
-    async def generate(self, messages: List[Message]) -> Message:
-        """
-        Processes a request to scrape data using a provided HTML and CSS selector.
-        """
-        # Step 1: The LLM's role is to parse the input and generate a tool call
-        latest_message = messages[-1]
+    def get_tool_call(self, messages: List[Message]) -> Dict[str, Any]:
+        return {
+            "tool": self.tool.get_name(),
+            "args": {
+                "url_contents": messages[-1].content
+            }
+        }
 
-        # The input from the SelectorFinder is a JSON string
-        url_contents = json.loads(latest_message.content)
-
-        # Step 2: Directly call the tool with the parsed arguments
-        # The agent's LLM is no longer used for this step. The agent acts as a pure executor.
-
-        try:
-            content_string = ''
-            for url_content in url_contents:
-                if 'url' in url_content:
-                    tool_output_json_string = await self.tool.run(url=url_content.get('url'))
-                    tool_output_dict = json.loads(tool_output_json_string)
-                    content_string += tool_output_dict.get('data', '') + '\n\n'
-            return Message(role='user', content=content_string, name=self.name)
-        except Exception as e:
-            self.logger.error(f"WebScrapingTool execution failed: {e}")
-            return Message(role='user', content=json.dumps({"error": f"Tool execution failed: {e}"}), name=self.name)
+    def get_tool_map(self) -> Dict[str, BaseTool | None]:
+        return {
+            self.tool.get_name(): self.tool
+        }

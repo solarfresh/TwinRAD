@@ -1,12 +1,14 @@
+import json
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from twinrad.clients.client_manager import ClientManager
 from twinrad.configs.logging_config import setup_logging
 from twinrad.schemas.agents import AgentConfig
 from twinrad.schemas.clients import LLMRequest, LLMResponse
 from twinrad.schemas.messages import Message
+from twinrad.tools.common.base_tool import BaseTool
 
 
 class BaseAgent(ABC):
@@ -17,6 +19,7 @@ class BaseAgent(ABC):
     The agent's specific behavior should be defined in subclasses by implementing their
     role within an AutoGen GroupChat or other conversational flows.
     """
+
     def __init__(self, config: AgentConfig, client_manager: ClientManager):
 
         self.config = config
@@ -37,18 +40,34 @@ class BaseAgent(ABC):
         return self.config.name
 
     async def generate(self, messages: List[Message]) -> Message:
+        copied_messages = [deepcopy(msg) for msg in messages]
+
+        try:
+            if self.config.tool_use == 'TOOL_USE_DIRECT':
+                tool_output_message = await self.generate_tool_message(copied_messages)
+                return tool_output_message
+
+            if self.config.tool_use == 'TOOL_USE_AND_PROCESS':
+                last_message = await self.generate_tool_message(copied_messages)
+                self.logger.debug(f"Tool output: {last_message.content}")
+                copied_messages.append(last_message)
+
+            return await self.generate_llm_message(copied_messages)
+        except Exception as e:
+            self.logger.error(f"Error during agent generation for agent '{self.name}': {e}")
+            return Message(role='assistant', content="Error: Could not generate a response.", name=self.name)
+
+    async def generate_llm_message(self, messages: List[Message]) -> Message:
+        last_message = messages[-1]
+
         try:
             cot_to_append = self.config.cot_message or self._message_mapper(self.get_cot_message_map())
             if cot_to_append:
-                messages_with_cot = [deepcopy(msg) for msg in messages]
-                last_message = messages_with_cot[-1]
                 last_message.content += f"\n\n{cot_to_append}"
-            else:
-                messages_with_cot = messages
 
             request = LLMRequest(
                 model=self.model,
-                messages=messages_with_cot,
+                messages=messages,
                 system_message=self.system_message,
             )
 
@@ -58,9 +77,41 @@ class BaseAgent(ABC):
             return Message(role='assistant', content=response.text, name=self.name)
         except Exception as e:
             self.logger.error(f"Error during LLM generation for agent '{self.name}': {e}")
-            # Depending on your design, you could return an error message,
-            # or raise a custom exception to be handled by the DebateManager.
-            return Message(role='assistant', content="Error: Could not generate a response.", name=self.name)
+            raise e
+
+    async def generate_tool_message(self, messages: List[Message]) -> Message:
+
+        tool_message = self._message_mapper(self.get_tool_message_map())
+        tool_call_data: Dict[str, Any] = {}
+
+        if tool_message is not None:
+            try:
+                request = LLMRequest(
+                    model=self.model,
+                    messages=messages,
+                    system_message=tool_message,
+                )
+                response: LLMResponse = await self.client_manager.generate(request)
+                tool_call_data = self.postprocess_tool_output(response.text)
+            except Exception as e:
+                self.logger.error(f"Error processing tool message from LLM: {e}")
+                raise e
+        else:
+            tool_call_data  = self.get_tool_call(messages=messages)
+
+        tool_name = tool_call_data.get('tool', 'default')
+        tool = self.get_tool_map()[tool_name]
+
+        if tool is None:
+            self.logger.warning(f"No tool found for tool call: '{tool_name}'")
+            return Message(role='assistant', content=f"Error: Tool '{tool_name}' not available.", name=self.name)
+
+        try:
+            tool_output = await tool.run(**tool_call_data.get("args", {}))
+            return Message(role='assistant', content=tool_output, name=self.name)
+        except Exception as e:
+            self.logger.error(f"Error executing tool '{tool_name}': {e}")
+            raise e
 
     @abstractmethod
     def get_system_message_map(self) -> Dict[str, str]:
@@ -70,10 +121,23 @@ class BaseAgent(ABC):
         """
         pass
 
+    def get_tool_map(self) -> Dict[str, BaseTool | None]:
+        return {'default': None}
+
     def get_cot_message_map(self) -> Dict[str, str] | None:
         """
         Method to be optionally overridden by subclasses to provide a mapping of model families
         to their respective chain-of-thought (CoT) messages.
+        """
+        return None
+
+    def get_tool_call(self, messages: List[Message]) -> Dict[str, Any]:
+        return {}
+
+    def get_tool_message_map(self) -> Dict[str, str] | None:
+        """
+        Method to be optionally overridden by subclasses to provide a mapping of model families
+        to their respective tool-use messages.
         """
         return None
 
@@ -82,3 +146,6 @@ class BaseAgent(ABC):
             return None
 
         return msg_map.get(self.config.lang, 'default')
+
+    def postprocess_tool_output(self, output_string: str) -> Dict[str, Any]:
+        return json.loads(output_string.replace('```json', '').replace('```', '').strip())

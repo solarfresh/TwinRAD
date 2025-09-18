@@ -4,10 +4,17 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import httpx
 import pytest
 
+from twinrad.tools.common.base_tool import ToolConfig
 from twinrad.tools.knowledge.retrieval import (GoogleSearchTool,
                                                PageLoaderTool,
                                                PlaywrightWrapper,
                                                WebScrapingTool)
+
+
+@pytest.fixture
+def mock_config():
+    mock_config = MagicMock(spec=ToolConfig)
+    return mock_config
 
 # Sample data for mocking API responses
 mock_successful_response = {
@@ -40,15 +47,13 @@ expected_processed_results = [
 ]
 
 @pytest.mark.asyncio
-@patch('twinrad.tools.knowledge.retrieval.settings')
-async def test_gs_run_success(mock_settings):
+async def test_gs_run_success(mock_config):
     """
     Tests a successful run of the GoogleSearchTool with a valid query.
     """
-    # Mock settings to provide API credentials
-    mock_settings.google_search_engine_api_key = "test_key"
-    mock_settings.google_search_engine_id = "test_cx"
-    mock_settings.google_search_engine_base_url = "http://test-api.com"
+    mock_config.google_search_engine_api_key = "test_key"
+    mock_config.google_search_engine_id = "test_cx"
+    mock_config.google_search_engine_base_url = "http://test-api.com"
 
     # Mock the HTTP response object
     mock_client_instance  = AsyncMock(spec=httpx.AsyncClient)
@@ -58,7 +63,7 @@ async def test_gs_run_success(mock_settings):
     mock_response.raise_for_status.return_value = None
     mock_client_instance.get = AsyncMock(return_value=mock_response)
 
-    tool = GoogleSearchTool()
+    tool = GoogleSearchTool(config=mock_config)
     tool.client = mock_client_instance
     result = await tool.run(query="test query")
 
@@ -71,22 +76,20 @@ async def test_gs_run_success(mock_settings):
     )
 
 @pytest.mark.asyncio
-@patch('twinrad.tools.knowledge.retrieval.settings')
-async def test_gs_run_missing_query(mock_settings):
+async def test_gs_run_missing_query(mock_config):
     """
     Tests that a run with a missing query returns the correct error message.
     """
-    # Mock settings to provide API credentials
-    mock_settings.google_search_engine_api_key = "test_key"
-    mock_settings.google_search_engine_id = "test_cx"
-    mock_settings.google_search_engine_base_url = "http://test-api.com"
+    mock_config.google_search_engine_api_key = "test_key"
+    mock_config.google_search_engine_id = "test_cx"
+    mock_config.google_search_engine_base_url = "http://test-api.com"
 
     mock_client_instance  = AsyncMock(spec=httpx.AsyncClient)
     mock_response = MagicMock()
     mock_response.raise_for_status.return_value = None
     mock_client_instance.get = AsyncMock(return_value=mock_response)
 
-    tool = GoogleSearchTool()
+    tool = GoogleSearchTool(config=mock_config)
     tool.client = mock_client_instance
     result = json.loads(await tool.run())
 
@@ -96,23 +99,21 @@ async def test_gs_run_missing_query(mock_settings):
     mock_client_instance.assert_not_called()
 
 @pytest.mark.asyncio
-@patch('twinrad.tools.knowledge.retrieval.settings')
 @patch('httpx.AsyncClient.get')
-async def test_gs_run_http_error(mock_get, mock_settings):
+async def test_gs_run_http_error(mock_get, mock_config):
     """
     Tests that an HTTP error (e.g., 404, 500) is handled correctly.
     """
-    # Mock settings to provide API credentials
-    mock_settings.google_search_engine_api_key = "test_key"
-    mock_settings.google_search_engine_id = "test_cx"
-    mock_settings.google_search_engine_base_url = "http://test-api.com"
+    mock_config.google_search_engine_api_key = "test_key"
+    mock_config.google_search_engine_id = "test_cx"
+    mock_config.google_search_engine_base_url = "http://test-api.com"
 
     # Mock the HTTP response object to raise an error
     mock_get.side_effect = httpx.HTTPStatusError(
         message="Not Found", request=httpx.Request("GET", ""), response=httpx.Response(404, request=httpx.Request("GET", ""), content="Not Found")
     )
 
-    tool = GoogleSearchTool()
+    tool = GoogleSearchTool(config=mock_config)
     result = json.loads(await tool.run(query="test query"))
 
     # Assertions
@@ -120,21 +121,19 @@ async def test_gs_run_http_error(mock_get, mock_settings):
     assert "HTTP error during Google search" in result["error"]
 
 @pytest.mark.asyncio
-@patch('twinrad.tools.knowledge.retrieval.settings')
 @patch('httpx.AsyncClient.get')
-async def test_gs_run_connection_error(mock_get, mock_settings):
+async def test_gs_run_connection_error(mock_get, mock_config):
     """
     Tests that a connection-level exception is handled correctly.
     """
-    # Mock settings to provide API credentials
-    mock_settings.google_search_engine_api_key = "test_key"
-    mock_settings.google_search_engine_id = "test_cx"
-    mock_settings.google_search_engine_base_url = "http://test-api.com"
+    mock_config.google_search_engine_api_key = "test_key"
+    mock_config.google_search_engine_id = "test_cx"
+    mock_config.google_search_engine_base_url = "http://test-api.com"
 
     # Mock the HTTP response object to raise a connection error
     mock_get.side_effect = httpx.ConnectError("Connection failed")
 
-    tool = GoogleSearchTool()
+    tool = GoogleSearchTool(config=mock_config)
     result = json.loads(await tool.run(query="test query"))
 
     # Assertions
@@ -142,42 +141,49 @@ async def test_gs_run_connection_error(mock_get, mock_settings):
     assert "An unexpected error occurred: Connection failed" in result["error"]
 
 @pytest.mark.asyncio
-@patch('twinrad.tools.knowledge.retrieval.settings')
-async def test_gs_run_missing_api_credentials(mock_settings):
+async def test_gs_run_missing_api_credentials(mock_config):
     """
     Tests that the tool returns an error if API credentials are not configured.
     """
-    # Mock settings to return None for credentials
-    mock_settings.google_search_engine_api_key = None
-    mock_settings.google_search_engine_id = None
-    mock_settings.google_search_engine_base_url = "http://test-api.com"
+    mock_config.google_search_engine_api_key = None
+    mock_config.google_search_engine_id = None
+    mock_config.google_search_engine_base_url = "http://test-api.com"
 
-    tool = GoogleSearchTool()
+    tool = GoogleSearchTool(config=mock_config)
     result = json.loads(await tool.run(query="test query"))
 
     # Assertions
     assert "error" in result
     assert "API key or Search Engine ID (cx) is not configured." in result["error"]
 
-def test_gs_get_name():
+def test_gs_get_name(mock_config):
     """
     Tests that get_name returns the correct string.
     """
-    tool = GoogleSearchTool()
+    mock_config.google_search_engine_api_key = "test_key"
+    mock_config.google_search_engine_id = "test_cx"
+    mock_config.google_search_engine_base_url = "http://test-api.com"
+    tool = GoogleSearchTool(config=mock_config)
     assert tool.get_name() == "google_search"
 
-def test_gs_get_description():
+def test_gs_get_description(mock_config):
     """
     Tests that get_description returns the correct string.
     """
-    tool = GoogleSearchTool()
+    mock_config.google_search_engine_api_key = "test_key"
+    mock_config.google_search_engine_id = "test_cx"
+    mock_config.google_search_engine_base_url = "http://test-api.com"
+    tool = GoogleSearchTool(config=mock_config)
     assert tool.get_description() == "Performs a Google search and returns a list of web page links and snippets."
 
-def test_gs_get_parameters():
+def test_gs_get_parameters(mock_config):
     """
     Tests that get_parameters returns the correct dictionary.
     """
-    tool = GoogleSearchTool()
+    mock_config.google_search_engine_api_key = "test_key"
+    mock_config.google_search_engine_id = "test_cx"
+    mock_config.google_search_engine_base_url = "http://test-api.com"
+    tool = GoogleSearchTool(config=mock_config)
     expected_params = {
         "type": "object",
         "properties": {
@@ -442,7 +448,7 @@ def test_pl_get_parameters():
     assert tool.get_parameters() == expected_params
 
 @pytest.mark.asyncio
-async def test_ws_run_success():
+async def test_ws_run_success(mock_config):
     """
     Tests a successful run of the tool with valid parameters.
     """
@@ -453,15 +459,15 @@ async def test_ws_run_success():
 
     # Patch the class itself to return our mock instance
     with patch('twinrad.tools.knowledge.retrieval.PlaywrightWrapper', return_value=mock_playwright_wrapper):
-        tool = WebScrapingTool()
-        result = await tool.run(url="https://example.com/")
+        tool = WebScrapingTool(config=mock_config)
+        result = await tool.run(url_contents="[{\"url\":\"https://example.com/\"}]")
 
-        expected_json = {"data": "Success"}
+        expected_json = [{"data": "Success"}]
         assert json.loads(result) == expected_json
-        mock_scrape_data.assert_called_once_with(url="https://example.com/")
+        mock_scrape_data.assert_called_once_with("https://example.com/")
 
 @pytest.mark.asyncio
-async def test_ws_run_missing_url():
+async def test_ws_run_missing_url(mock_config):
     """
     Tests that a run with a missing URL returns the correct error message.
     """
@@ -470,38 +476,38 @@ async def test_ws_run_missing_url():
     mock_playwright_wrapper.__aenter__.return_value.scrape_all_text_from_url = mock_scrape_data
 
     with patch('twinrad.tools.knowledge.retrieval.PlaywrightWrapper', return_value=mock_playwright_wrapper):
-        tool = WebScrapingTool()
+        tool = WebScrapingTool(config=mock_config)
         result = json.loads(await tool.run())
 
-    assert result == {"error": "Missing 'url' parameter."}
+    assert result == {"error": "Missing 'url_contents' parameter."}
 
-def test_ws_get_name():
+def test_ws_get_name(mock_config):
     """
     Tests that get_name returns the correct string.
     """
-    tool = WebScrapingTool()
+    tool = WebScrapingTool(config=mock_config)
     assert tool.get_name() == "scrape_web_data"
 
-def test_ws_get_description():
+def test_ws_get_description(mock_config):
     """
     Tests that get_description returns the correct string.
     """
-    tool = WebScrapingTool()
+    tool = WebScrapingTool(config=mock_config)
     assert tool.get_description() == "Scrapes data from a specified HTML content using a CSS selector query and returns it as a JSON string."
 
-def test_ws_get_parameters():
+def test_ws_get_parameters(mock_config):
     """
     Tests that get_parameters returns the correct dictionary.
     """
-    tool = WebScrapingTool()
+    tool = WebScrapingTool(config=mock_config)
     expected_params = {
         "type": "object",
         "properties": {
-            "url": {
+            "url_contents": {
                 "type": "string",
-                "description": "The url of the webpage to scrape."
+                "description": "A JSON string containing a list of URLs to scrape."
             }
         },
-        "required": ["url"]
+        "required": ["url_contents"]
     }
     assert tool.get_parameters() == expected_params
