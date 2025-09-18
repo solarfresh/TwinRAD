@@ -41,7 +41,6 @@ class BaseAgent(ABC):
 
     async def generate(self, messages: List[Message]) -> Message:
         copied_messages = [deepcopy(msg) for msg in messages]
-        last_message = copied_messages[-1]
 
         try:
             if self.config.tool_use == 'TOOL_USE_DIRECT':
@@ -53,13 +52,22 @@ class BaseAgent(ABC):
                 self.logger.debug(f"Tool output: {last_message.content}")
                 copied_messages.append(last_message)
 
+            return await self.generate_llm_message(copied_messages)
+        except Exception as e:
+            self.logger.error(f"Error during agent generation for agent '{self.name}': {e}")
+            return Message(role='assistant', content="Error: Could not generate a response.", name=self.name)
+
+    async def generate_llm_message(self, messages: List[Message]) -> Message:
+        last_message = messages[-1]
+
+        try:
             cot_to_append = self.config.cot_message or self._message_mapper(self.get_cot_message_map())
             if cot_to_append:
                 last_message.content += f"\n\n{cot_to_append}"
 
             request = LLMRequest(
                 model=self.model,
-                messages=copied_messages,
+                messages=messages,
                 system_message=self.system_message,
             )
 
@@ -69,9 +77,7 @@ class BaseAgent(ABC):
             return Message(role='assistant', content=response.text, name=self.name)
         except Exception as e:
             self.logger.error(f"Error during LLM generation for agent '{self.name}': {e}")
-            # Depending on your design, you could return an error message,
-            # or raise a custom exception to be handled by the DebateManager.
-            return Message(role='assistant', content="Error: Could not generate a response.", name=self.name)
+            raise e
 
     async def generate_tool_message(self, messages: List[Message]) -> Message:
 
