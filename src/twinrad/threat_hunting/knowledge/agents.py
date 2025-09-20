@@ -193,14 +193,14 @@ class QueryDecision(BaseAgent):
 
     def postprocess_llm_output(self, output_string: str) -> str:
         self.logger.info("Postprocessing LLM output for query extraction.")
-        self.logger.info(f"Raw LLM output: {output_string}")
+        self.logger.debug(f"Raw LLM output: {output_string}")
         pattern = r"\"google_query\":\s*\"(.*?)\""
         latest_match_object = None
         for match in re.finditer(pattern, output_string):
             latest_match_object = match
 
         if latest_match_object:
-            return ' '.join(latest_match_object.group(0))
+            return latest_match_object.group(1)
         else:
             return ''
 
