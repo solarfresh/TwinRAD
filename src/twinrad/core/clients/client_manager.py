@@ -2,14 +2,14 @@ import asyncio
 from asyncio import Future, Queue, Task
 from typing import Dict
 
-from twinrad.clients.handlers.base_handler import BaseHandler
-from twinrad.clients.handlers.gemini_handler import GeminiHandler
-from twinrad.clients.handlers.openai_handler import OpenAIHandler
-from twinrad.configs.logging_config import setup_logging
-from twinrad.schemas.clients import ClientConfig, LLMRequest, LLMResponse
+from twinrad.core.clients.handlers.base_handler import BaseHandler
+from twinrad.core.clients.handlers.gemini_handler import GeminiHandler
+from twinrad.core.clients.handlers.openai_handler import OpenAIHandler
+from twinrad.core.configs.logging_config import setup_logging
+from twinrad.core.schemas.clients import ClientConfig, LLMRequest, LLMResponse
 
 try:
-    from twinrad.clients.handlers.vllm_handler import VLLMHandler
+    from twinrad.core.clients.handlers.vllm_handler import VLLMHandler
     using_vllm_handler = True
 except ImportError:
     using_vllm_handler = False

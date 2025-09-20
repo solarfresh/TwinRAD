@@ -1,8 +1,9 @@
 import json
+import re
 from copy import deepcopy
 from typing import Any, Dict, List
 
-from twinrad.core.agents.common.base_agent import BaseAgent
+from twinrad.core.agents.base_agent import BaseAgent
 from twinrad.core.clients.client_manager import ClientManager
 from twinrad.core.schemas.agents import AgentConfig
 from twinrad.core.schemas.messages import Message
@@ -180,8 +181,8 @@ class QueryDecision(BaseAgent):
 
     def get_system_message_map(self) -> Dict[str, str]:
         return {
-            'en': "You are a specialized AI assistant designed to analyze a collection of topics and generate an effective search query for a Google-like search engine. Your core function is to identify the relationships, missing information, and key entities within a given set of terms. Your output should be a well-structured list of queries that, when executed, will help a human user quickly and comprehensively find the interconnected information.\n\nYour tasks are:\n\n1.  **Categorize Topics:** Group the provided terms into logical themes (e.g., organizations, projects, use cases, technical details).\n2.  **Identify Connections:** Analyze how different topics might relate to each other. Look for partnerships, dependencies, or comparative relationships.\n3.  **Formulate Queries:** Based on your analysis, create a list of highly specific and effective search queries. Each query should be designed to uncover the \"missing parts\" that link the provided topics together.\n4.  **Structure the Output:** Present the queries in a clear, categorized list. Use headings and bullet points to make the output easy to read and use.\n\nYour final output must be a **single** search query, not a summary or analysis of the content itself. Your sole purpose is to provide the user with the tools to perform their own information synthesis.",
-            'default': "You are a specialized AI assistant designed to analyze a collection of topics and generate an effective search query for a Google-like search engine. Your core function is to identify the relationships, missing information, and key entities within a given set of terms. Your output should be a well-structured list of queries that, when executed, will help a human user quickly and comprehensively find the interconnected information.\n\nYour tasks are:\n\n1.  **Categorize Topics:** Group the provided terms into logical themes (e.g., organizations, projects, use cases, technical details).\n2.  **Identify Connections:** Analyze how different topics might relate to each other. Look for partnerships, dependencies, or comparative relationships.\n3.  **Formulate Queries:** Based on your analysis, create a list of highly specific and effective search queries. Each query should be designed to uncover the \"missing parts\" that link the provided topics together.\n4.  **Structure the Output:** Present the queries in a clear, categorized list. Use headings and bullet points to make the output easy to read and use.\n\nYour final output must be a **single** search query, not a summary or analysis of the content itself. Your sole purpose is to provide the user with the tools to perform their own information synthesis."
+            'en': "You are a specialized AI assistant designed to analyze a collection of topics and generate an effective search query for a Google-like search engine. Your core function is to identify the relationships, missing information, and key entities within a given set of terms. Your output should be a well-structured list of queries that, when executed, will help a human user quickly and comprehensively find the interconnected information.\n\nYour tasks are:\n\n1.  **Categorize Topics:** Group the provided terms into logical themes (e.g., organizations, projects, use cases, technical details).\n2.  **Identify Connections:** Analyze how different topics might relate to each other. Look for partnerships, dependencies, or comparative relationships.\n3.  **Formulate Queries:** Based on your analysis, create a list of five highly specific keywords or a short sentence. Each query should be designed to uncover the \"missing parts\" that link the provided topics together.\n4.  **Structure the Output:** Present the queries in a clear, categorized list. Use headings and bullet points to make the output easy to read and use.\n\nYour final output must be a **single** search query, not a summary or analysis of the content itself. Your sole purpose is to provide the user with the tools to perform their own information synthesis.",
+            'default': "You are a specialized AI assistant designed to analyze a collection of topics and generate an effective search query for a Google-like search engine. Your core function is to identify the relationships, missing information, and key entities within a given set of terms. Your output should be a well-structured list of queries that, when executed, will help a human user quickly and comprehensively find the interconnected information.\n\nYour tasks are:\n\n1.  **Categorize Topics:** Group the provided terms into logical themes (e.g., organizations, projects, use cases, technical details).\n2.  **Identify Connections:** Analyze how different topics might relate to each other. Look for partnerships, dependencies, or comparative relationships.\n3.  **Formulate Queries:** Based on your analysis, create a list of five highly specific keywords or a short sentence. Each query should be designed to uncover the \"missing parts\" that link the provided topics together.\n4.  **Structure the Output:** Present the queries in a clear, categorized list. Use headings and bullet points to make the output easy to read and use.\n\nYour final output must be a **single** search query, not a summary or analysis of the content itself. Your sole purpose is to provide the user with the tools to perform their own information synthesis."
         }
 
     def get_cot_message_map(self) -> Dict[str, str]:
@@ -193,9 +194,15 @@ class QueryDecision(BaseAgent):
     def postprocess_llm_output(self, output_string: str) -> str:
         self.logger.info("Postprocessing LLM output for query extraction.")
         self.logger.info(f"Raw LLM output: {output_string}")
-        output_json = json.loads(output_string.replace('```json', '').replace('```', '').strip())
-        query_string = output_json.get('google_query', '')
-        return ' '.join(query_string.split(' ')[:3])
+        pattern = r"\"google_query\":\s*\"(.*?)\""
+        latest_match_object = None
+        for match in re.finditer(pattern, output_string):
+            latest_match_object = match
+
+        if latest_match_object:
+            return ' '.join(latest_match_object.group(0))
+        else:
+            return ''
 
 
 class ReportAnalyst(BaseAgent):

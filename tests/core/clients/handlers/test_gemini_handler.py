@@ -4,9 +4,9 @@ import pytest
 from google.genai import Client, types
 from google.genai.types import Candidate, GenerateContentResponse
 
-from twinrad.clients.handlers.gemini_handler import GeminiHandler
-from twinrad.schemas.clients import (LLMRequest, LLMResponse, Message,
-                                     ModelConfig)
+from twinrad.core.clients.handlers.gemini_handler import GeminiHandler
+from twinrad.core.schemas.clients import (LLMRequest, LLMResponse, Message,
+                                          ModelConfig)
 
 
 @pytest.fixture

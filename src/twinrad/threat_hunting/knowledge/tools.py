@@ -40,18 +40,15 @@ class GoogleSearchTool(BaseTool):
 
         query = kwargs.get('query', '')
         self.logger.debug(f"Running GoogleSearchTool with query: {query}")
-        if not query.strip():
-            return json.dumps([], ensure_ascii=False)
-
         params = {
             "key": self.api_key,
             "cx": self.cx,
-            "q": query
+            "q": query.strip()
         }
 
         try:
             if not params.get('q'):
-                raise ValueError("Missing 'query' parameter.")
+                raise ValueError("Query parameter cannot be empty or missing.")
 
             response = await self.client.get(self.base_url, params=params, timeout=10.0)
             response.raise_for_status()  # Raise an exception for bad status codes

@@ -2,12 +2,12 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from twinrad.agents.common.generic_agent import GenericAgent
-from twinrad.groups.common.generic_group import GenericGroupChat
-from twinrad.groups.common.generic_manager import GenericGroupManager
-from twinrad.schemas.messages import Message
-from twinrad.workflows.common.base_flow import SequentialFlow
-from twinrad.workflows.common.termination import MaxRoundsCondition
+from twinrad.core.agents.generic_agent import GenericAgent
+from twinrad.core.groups.generic_group import GenericGroupChat
+from twinrad.core.groups.generic_manager import GenericGroupManager
+from twinrad.core.schemas.messages import Message
+from twinrad.core.workflows.base_flow import SequentialFlow
+from twinrad.core.workflows.termination import MaxRoundsCondition
 
 
 @pytest.fixture

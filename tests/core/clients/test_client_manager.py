@@ -5,11 +5,11 @@ from google.genai import Client, types
 from google.genai.types import Candidate, GenerateContentResponse
 from openai import AsyncOpenAI
 
-from twinrad.clients.client_manager import ClientManager
-from twinrad.clients.handlers.gemini_handler import GeminiHandler
-from twinrad.clients.handlers.openai_handler import OpenAIHandler
-from twinrad.schemas.clients import (ClientConfig, LLMRequest, Message,
-                                     ModelConfig)
+from twinrad.core.clients.client_manager import ClientManager
+from twinrad.core.clients.handlers.gemini_handler import GeminiHandler
+from twinrad.core.clients.handlers.openai_handler import OpenAIHandler
+from twinrad.core.schemas.clients import (ClientConfig, LLMRequest, Message,
+                                          ModelConfig)
 
 
 @pytest.fixture

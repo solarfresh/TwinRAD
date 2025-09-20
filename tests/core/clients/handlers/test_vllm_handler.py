@@ -5,9 +5,9 @@ import pytest_asyncio
 from transformers import AutoTokenizer
 from vllm import AsyncLLMEngine
 
-from twinrad.clients.handlers.vllm_handler import VLLMHandler
-from twinrad.schemas.clients import (LLMRequest, LLMResponse, Message,
-                                     ModelConfig)
+from twinrad.core.clients.handlers.vllm_handler import VLLMHandler
+from twinrad.core.schemas.clients import (LLMRequest, LLMResponse, Message,
+                                          ModelConfig)
 
 
 # We are mocking the entire class, so no need for `from_engine_args`

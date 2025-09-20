@@ -1,14 +1,13 @@
-from typing import List
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from twinrad.groups.common.base_group import BaseGroupChat
-from twinrad.groups.common.base_manager import BaseRoom
-from twinrad.schemas.groups import RoomConfig
-from twinrad.schemas.messages import Message
-from twinrad.workflows.common.base_flow import BaseFlow
-from twinrad.workflows.common.termination import MaxRoundsCondition
+from twinrad.core.groups.base_group import BaseGroupChat
+from twinrad.core.groups.base_manager import BaseRoom
+from twinrad.core.schemas.groups import RoomConfig
+from twinrad.core.schemas.messages import Message
+from twinrad.core.workflows.base_flow import BaseFlow
+from twinrad.core.workflows.termination import MaxRoundsCondition
 
 
 # Mock classes to simulate dependencies
@@ -57,7 +56,7 @@ def mock_config():
 # Test the BaseRoom class
 @pytest.fixture
 def base_room(mock_config):
-    with patch('twinrad.clients.client_manager.ClientManager'):
+    with patch('twinrad.core.clients.client_manager.ClientManager'):
         room = BaseRoom(config=mock_config)
         room.group_chat = mock_group_chat
         room.workflow = mock_flow

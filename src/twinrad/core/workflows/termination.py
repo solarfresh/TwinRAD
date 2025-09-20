@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Union
 
-from twinrad.schemas.messages import Message
+from twinrad.core.schemas.messages import Message
 
 
 class TerminationCondition(ABC):

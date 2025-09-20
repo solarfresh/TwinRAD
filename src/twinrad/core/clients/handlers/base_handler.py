@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
-from twinrad.configs.logging_config import setup_logging
-from twinrad.schemas.clients import LLMRequest, LLMResponse, ModelConfig
+from twinrad.core.configs.logging_config import setup_logging
+from twinrad.core.schemas.clients import LLMRequest, LLMResponse, ModelConfig
 
 
 class BaseHandler(ABC):

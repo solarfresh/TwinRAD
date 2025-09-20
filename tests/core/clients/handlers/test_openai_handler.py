@@ -7,9 +7,9 @@ from openai.types.chat.chat_completion import ChatCompletion, Choice
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
 from openai.types.completion_usage import CompletionUsage
 
-from twinrad.clients.handlers.openai_handler import OpenAIHandler
-from twinrad.schemas.clients import (LLMRequest, LLMResponse, Message,
-                                     ModelConfig)
+from twinrad.core.clients.handlers.openai_handler import OpenAIHandler
+from twinrad.core.schemas.clients import (LLMRequest, LLMResponse, Message,
+                                          ModelConfig)
 
 
 @pytest.fixture

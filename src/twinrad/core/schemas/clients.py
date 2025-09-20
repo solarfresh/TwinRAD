@@ -2,7 +2,7 @@ from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field, NonNegativeInt
 
-from twinrad.schemas.messages import Message
+from twinrad.core.schemas.messages import Message
 
 
 class LLMRequest(BaseModel):

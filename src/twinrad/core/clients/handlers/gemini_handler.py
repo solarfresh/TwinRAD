@@ -1,8 +1,8 @@
 from google import genai
 from google.genai import types
 
-from twinrad.clients.handlers.base_handler import BaseHandler
-from twinrad.schemas.clients import LLMRequest, LLMResponse, ModelConfig
+from twinrad.core.clients.handlers.base_handler import BaseHandler
+from twinrad.core.schemas.clients import LLMRequest, LLMResponse, ModelConfig
 
 
 class GeminiHandler(BaseHandler):

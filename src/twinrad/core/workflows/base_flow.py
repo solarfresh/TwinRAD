@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Dict, List
 
 from twinrad.core.agents.base_agent import BaseAgent
-from twinrad.core.groups.common.base_group import BaseGroupChat
+from twinrad.core.groups.base_group import BaseGroupChat
 from twinrad.core.schemas.messages import Message
 
 

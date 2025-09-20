@@ -5,8 +5,8 @@ from vllm import AsyncLLMEngine
 from vllm.engine.arg_utils import AsyncEngineArgs
 from vllm.sampling_params import SamplingParams
 
-from twinrad.clients.handlers.base_handler import BaseHandler
-from twinrad.schemas.clients import LLMRequest, LLMResponse, ModelConfig
+from twinrad.core.clients.handlers.base_handler import BaseHandler
+from twinrad.core.schemas.clients import LLMRequest, LLMResponse, ModelConfig
 
 
 class VLLMHandler(BaseHandler):

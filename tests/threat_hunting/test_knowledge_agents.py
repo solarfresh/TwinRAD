@@ -3,12 +3,11 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from twinrad.agents.knowledge.retrieval import SelectorFinder
-from twinrad.clients.client_manager import ClientManager
-from twinrad.schemas.agents import AgentConfig
-from twinrad.schemas.clients import LLMRequest
-from twinrad.schemas.messages import Message
-from twinrad.tools.knowledge.retrieval import PageLoaderTool
+from twinrad.core.clients.client_manager import ClientManager
+from twinrad.core.schemas.agents import AgentConfig
+from twinrad.core.schemas.messages import Message
+from twinrad.threat_hunting.knowledge.agents import SelectorFinder
+from twinrad.threat_hunting.knowledge.tools import PageLoaderTool
 
 
 @pytest.mark.asyncio
