@@ -62,14 +62,14 @@ class CentralIdeaNode(Node):
 class MindMap(BaseModel):
     central_ideas: Dict[str, CentralIdeaNode] = Field(default_factory=dict)
     all_nodes: Set[Tuple[str, str]] = Field(default_factory=set)
-    all_relationships: Set[Tuple[str, str]] = Field(default_factory=set)
+    all_relationships: Set[Tuple[str, str, str]] = Field(default_factory=set)
     unique_central_ideas: Set[Tuple[str, str]] = Field(default_factory=set, exclude=True)
 
     def add_node(self, node: Node):
         self.all_nodes.add((node.label, node.type))
 
     def add_relationship(self, relationship: Edge):
-        self.all_relationships.add((relationship.source, relationship.target))
+        self.all_relationships.add((relationship.source, relationship.target, relationship.type))
 
     def add_central_idea(self, central_idea: CentralIdeaNode):
         if (central_idea.label, central_idea.type) not in self.unique_central_ideas:
@@ -107,4 +107,4 @@ class MindMap(BaseModel):
                     self.add_node(keyword)
 
         for relationship_data in data.get('relationships', []):
-            self.all_relationships.add((relationship_data.get('source'), relationship_data.get('target')))
+            self.all_relationships.add((relationship_data.get('source'), relationship_data.get('target'), relationship_data.get('type')))

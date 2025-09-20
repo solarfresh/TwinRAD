@@ -79,9 +79,10 @@ class GraphBuilderAgent(BaseAgent):
 
             mind_map_message = await self.generate_llm_message([Message(role='user', content=data_payload, name=self.name)])
             mind_map_json_output = self.postprocess_llm_output(mind_map_message.content)
-            tool_output = await self.tool.run(json_output=mind_map_json_output)
+            await self.tool.run(json_output=mind_map_json_output)
 
-        return Message(role='assistant', content=tool_output, name=self.name)
+        node_labels = ', '.join([label for label, label_type in self.tool.graph.all_nodes if label_type in ['CentralIdea', 'MainTopic']])
+        return Message(role='assistant', content=node_labels, name=self.name)
 
     def postprocess_llm_output(self, message_content: str) -> str:
         self.logger.debug(f'message_content: {message_content}')

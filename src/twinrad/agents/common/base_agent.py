@@ -40,7 +40,7 @@ class BaseAgent(ABC):
         return self.config.name
 
     async def generate(self, messages: List[Message]) -> Message:
-        copied_messages = [deepcopy(msg) for msg in messages]
+        copied_messages = [deepcopy(msg) for msg in messages[-self.config.turn_limit:]]
 
         try:
             if self.config.tool_use == 'TOOL_USE_DIRECT':
@@ -74,13 +74,15 @@ class BaseAgent(ABC):
             self.logger.debug(f"Sending request to LLM: {request}")
             response: LLMResponse = await self.client_manager.generate(request)
 
-            return Message(role='assistant', content=response.text, name=self.name)
+            output_string = self.postprocess_llm_output(response.text)
+
+            return Message(role='assistant', content=output_string, name=self.name)
         except Exception as e:
             self.logger.error(f"Error during LLM generation for agent '{self.name}': {e}")
             raise e
 
     async def generate_tool_message(self, messages: List[Message]) -> Message:
-
+        self.logger.debug("Generating tool message...")
         tool_message = self._message_mapper(self.get_tool_message_map())
         tool_call_data: Dict[str, Any] = {}
 
@@ -101,12 +103,14 @@ class BaseAgent(ABC):
 
         tool_name = tool_call_data.get('tool', 'default')
         tool = self.get_tool_map()[tool_name]
+        self.logger.debug("Retrieved tool for tool call.")
 
         if tool is None:
             self.logger.warning(f"No tool found for tool call: '{tool_name}'")
             return Message(role='assistant', content=f"Error: Tool '{tool_name}' not available.", name=self.name)
 
         try:
+            self.logger.debug(f"Executing tool '{tool_name}' with args: {tool_call_data.get('args', {})}")
             tool_output = await tool.run(**tool_call_data.get("args", {}))
             return Message(role='assistant', content=tool_output, name=self.name)
         except Exception as e:
@@ -147,5 +151,8 @@ class BaseAgent(ABC):
 
         return msg_map.get(self.config.lang, 'default')
 
-    def postprocess_tool_output(self, output_string: str) -> Dict[str, Any]:
+    def postprocess_tool_output(self, output_string: str) -> Any:
         return json.loads(output_string.replace('```json', '').replace('```', '').strip())
+
+    def postprocess_llm_output(self, output_string: str) -> str:
+        return output_string

@@ -61,17 +61,20 @@ class QueryDecision(BaseAgent):
 
     def get_system_message_map(self) -> Dict[str, str]:
         return {
-            'en': (
-                "You are a specialized analysis agent. Your task is to analyze the provided search results and scraped content to determine if the user's original query has been fully answered.\n\n"
-                "Your output must be one of two formats:\n"
-                "1. If the information is **insufficient**, provide a new, refined search query as a simple string. For example: 'new query string here'\n"
-                "2. If the information is **sufficient**, and you have a comprehensive summary, respond with a single, empty string to signal completion.\n\n"
-                "Prioritize providing a full summary if possible. Only provide a new query if the data is clearly incomplete or contradictory. Do not add any extra text, explanations, or conversation."
-            ),
-            'default': (
-                "You are an analysis agent. If the provided data is insufficient, respond with a new search query. Otherwise, respond with a single, empty string to stop."
-            )
+            'en': "You are a specialized AI assistant designed to analyze a collection of topics and generate an effective search query for a Google-like search engine. Your core function is to identify the relationships, missing information, and key entities within a given set of terms. Your output should be a well-structured list of queries that, when executed, will help a human user quickly and comprehensively find the interconnected information.\n\nYour tasks are:\n\n1.  **Categorize Topics:** Group the provided terms into logical themes (e.g., organizations, projects, use cases, technical details).\n2.  **Identify Connections:** Analyze how different topics might relate to each other. Look for partnerships, dependencies, or comparative relationships.\n3.  **Formulate Queries:** Based on your analysis, create a list of highly specific and effective search queries. Each query should be designed to uncover the \"missing parts\" that link the provided topics together.\n4.  **Structure the Output:** Present the queries in a clear, categorized list. Use headings and bullet points to make the output easy to read and use.\n\nYour final output must be a **single** search query, not a summary or analysis of the content itself. Your sole purpose is to provide the user with the tools to perform their own information synthesis.",
+            'default': "You are a specialized AI assistant designed to analyze a collection of topics and generate an effective search query for a Google-like search engine. Your core function is to identify the relationships, missing information, and key entities within a given set of terms. Your output should be a well-structured list of queries that, when executed, will help a human user quickly and comprehensively find the interconnected information.\n\nYour tasks are:\n\n1.  **Categorize Topics:** Group the provided terms into logical themes (e.g., organizations, projects, use cases, technical details).\n2.  **Identify Connections:** Analyze how different topics might relate to each other. Look for partnerships, dependencies, or comparative relationships.\n3.  **Formulate Queries:** Based on your analysis, create a list of highly specific and effective search queries. Each query should be designed to uncover the \"missing parts\" that link the provided topics together.\n4.  **Structure the Output:** Present the queries in a clear, categorized list. Use headings and bullet points to make the output easy to read and use.\n\nYour final output must be a **single** search query, not a summary or analysis of the content itself. Your sole purpose is to provide the user with the tools to perform their own information synthesis."
         }
+
+    def get_cot_message_map(self) -> Dict[str, str]:
+        return {
+            "en": "You are a specialized AI assistant that synthesizes information to generate a single, comprehensive Google search query. Your output must be a JSON object.\n\nBased on the topics above, provide a single, comprehensive Google search query that connects them all together. The query should be designed to find the relationships and missing context between the different projects and organizations.\n\nOutput format:\n{\n  \"google_query\": \"your comprehensive search query here\"\n}",
+            "default": "You are a specialized AI assistant that synthesizes information to generate a single, comprehensive Google search query. Your output must be a JSON object.\n\nBased on the topics above, provide a single, comprehensive Google search query that connects them all together. The query should be designed to find the relationships and missing context between the different projects and organizations.\n\nOutput format:\n{\n  \"google_query\": \"your comprehensive search query here\"\n}"
+        }
+
+    def postprocess_llm_output(self, output_string: str) -> str:
+        output_json = json.loads(output_string.replace('```json', '').replace('```', '').strip())
+        query_string = output_json.get('google_query', '')
+        return ' '.join(query_string.split(' ')[:5])
 
 
 class SearchAgent(BaseAgent):
