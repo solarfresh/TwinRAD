@@ -122,7 +122,7 @@ class GraphBuilderAgent(BaseAgent):
 
             data_payloads += self._split_data_payload(data_payload)
 
-        for data_payload in data_payload:
+        for data_payload in data_payloads:
             mind_map_message = await self.generate_llm_message([Message(role='user', content=data_payload, name=self.name)])
             mind_map_json_output = self.postprocess_llm_output(mind_map_message.content)
             await self.tool.run(json_output=mind_map_json_output)
@@ -146,8 +146,8 @@ class GraphBuilderAgent(BaseAgent):
 
             if current_length + line_length > self.max_prompt_length and current_chunk:
                 chunks.append(current_chunk)
-                current_chunk  = line_with_newline
-                current_length  = line_length
+                current_chunk = line_with_newline
+                current_length = line_length
             else:
                 current_chunk += line_with_newline
                 current_length += line_length
