@@ -42,7 +42,7 @@ class GenericGroupManager(BaseGroupManager):
             # 2. Get a response from the speaker
             response = await speaker.generate(self.group_chat.messages)
 
-            self.logger.info(f"[{speaker.name}] {response.content}")
+            self.logger.debug(f"[{speaker.name}] {response.content}")
 
             # 3. Add the response to the history
             self.group_chat.add_message(response)
