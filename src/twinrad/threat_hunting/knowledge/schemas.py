@@ -3,6 +3,19 @@ from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
+from twinrad.core.schemas.tools import ToolConfig
+from twinrad.core.schemas.agents import AgentConfig
+
+
+class GoogleSearchToolConfig(ToolConfig):
+    google_search_engine_id: str = ''
+    google_search_engine_api_key: str = ''
+    google_search_engine_base_url: str = "https://customsearch.googleapis.com/customsearch/v1"
+
+
+class GoogleSearchAgentConfig(AgentConfig, GoogleSearchToolConfig):
+    pass
+
 
 class Node(BaseModel):
     label: str

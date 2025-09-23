@@ -8,7 +8,10 @@ from twinrad.core.clients.client_manager import ClientManager
 from twinrad.core.schemas.agents import AgentConfig
 from twinrad.core.schemas.messages import Message
 from twinrad.threat_hunting.knowledge import tools
-from twinrad.threat_hunting.knowledge.tools import BaseTool, ToolConfig
+from twinrad.threat_hunting.knowledge.schemas import (GoogleSearchAgentConfig,
+                                                      GoogleSearchToolConfig,
+                                                      ToolConfig)
+from twinrad.threat_hunting.knowledge.tools import BaseTool
 
 
 class DataAnalyst(BaseAgent):
@@ -268,13 +271,13 @@ class SearchAgent(BaseAgent):
     Acts as an expert search agent responsible for finding relevant web pages
     based on a natural language query.
     """
-    def __init__(self, config: AgentConfig, client_manager: ClientManager):
+    def __init__(self, config: GoogleSearchAgentConfig, client_manager: ClientManager):
         super().__init__(config, client_manager)
         self.config.tool_use = 'TOOL_USE_DIRECT'
-        self.tool = tools.GoogleSearchTool(config=ToolConfig(
-            google_search_engine_id=self.config.google_search_engine_id,
-            google_search_engine_api_key=self.config.google_search_engine_api_key,
-            google_search_engine_base_url=self.config.google_search_engine_base_url,
+        self.tool = tools.GoogleSearchTool(config=GoogleSearchToolConfig(
+            google_search_engine_id=config.google_search_engine_id,
+            google_search_engine_api_key=config.google_search_engine_api_key,
+            google_search_engine_base_url=config.google_search_engine_base_url,
         ))
 
     def get_system_message_map(self) -> Dict[str, str]:

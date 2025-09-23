@@ -6,9 +6,9 @@ import httpx
 from playwright.async_api import async_playwright
 from pydantic import ValidationError
 
-from twinrad.core.schemas.tools import GoogleSearchConfig
 from twinrad.core.tools.base_tool import BaseTool, ToolConfig
 from twinrad.threat_hunting.knowledge.graphs import MindMap
+from twinrad.threat_hunting.knowledge.schemas import GoogleSearchToolConfig
 
 
 class GoogleSearchTool(BaseTool):
@@ -18,7 +18,7 @@ class GoogleSearchTool(BaseTool):
     API Documentation:
         https://developers.google.com/custom-search/v1/reference/rest/v1/cse/list
     """
-    def __init__(self, config: GoogleSearchConfig):
+    def __init__(self, config: GoogleSearchToolConfig):
         super().__init__(config=config)
         # These should be loaded from a secure configuration or environment variables
         self.api_key = config.google_search_engine_api_key
