@@ -95,16 +95,38 @@ class MindMap(BaseModel):
             main_topic = MainTopicNode(**branch_data)
             central_idea.add_main_topic(main_topic)
             self.add_node(main_topic)
+            self.all_relationships.add((central_idea.label, main_topic.label, ''))
 
             for sub_branch_data in branch_data.get('sub_topics', []):
                 sub_topic = SubTopicNode(**sub_branch_data)
                 main_topic.add_sub_topic(sub_topic)
                 self.add_node(sub_topic)
+                self.all_relationships.add((main_topic.label, sub_topic.label, ''))
 
                 for keyword_data in sub_branch_data.get('keywords', []):
                     keyword = KeywordNode(**keyword_data)
                     sub_topic.add_keyword(keyword)
                     self.add_node(keyword)
+                    self.all_relationships.add((sub_topic.label, keyword.label, ''))
 
         for relationship_data in data.get('relationships', []):
             self.all_relationships.add((relationship_data.get('source'), relationship_data.get('target'), relationship_data.get('type')))
+
+    def to_json(self):
+        """
+        {
+            "nodes": [
+                {"id": "A", "label": "Node A"},
+                {"id": "B", "label": "Node B"},
+                {"id": "C", "label": "Node C"}
+            ],
+            "edges": [
+                {"source": "A", "target": "B", "weight": 1},
+                {"source": "B", "target": "C", "weight": 2}
+            ]
+        }
+        """
+        return {
+            "nodes": [{"id": node_label, "label": node_label} for node_label, node_type in self.all_nodes],
+            "edges": [{"source": edge_source, "target": edge_target, "weight": 1} for edge_source, edge_target, edge_type in self.all_relationships]
+        }

@@ -1,10 +1,10 @@
 from enum import Enum
 from typing import Literal
 
-from twinrad.core.schemas.tools import ToolConfig
+from pydantic import BaseModel
 
 
-class AgentConfig(ToolConfig):
+class AgentConfig(BaseModel):
     name: str
     model: str
     lang: str = 'en'
