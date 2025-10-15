@@ -21,3 +21,4 @@ class Node2VecConfig(ToolConfig):
     learning_rate: float
     epochs: int
     steps_per_epoch: int | None = None
+    resumed: bool = True

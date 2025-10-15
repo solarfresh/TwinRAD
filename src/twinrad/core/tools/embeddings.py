@@ -144,6 +144,10 @@ if using_torch:
 
 
     class Node2Vec(BaseTool):
+        walks: str | None = None
+        model: Word2Vec | None = None
+        optimizer: optim.Adam | None = None
+
         class Node2VecDataset(Dataset):
             def __init__(self, walks, window_size):
                 self.data = []
@@ -181,20 +185,33 @@ if using_torch:
             )
 
         async def run(self, **kwargs) -> Any:
-            walks = await self.node2vec_walker.run(**kwargs)
-            dataset = self.Node2VecDataset(json.loads(walks), self.config.window_size)
+            if self.walks is None:
+                self.walks = await self.node2vec_walker.run(**kwargs)
+
+            if self.walks is None:
+                raise ValueError("Walks generation failed.")
+
+            dataset = self.Node2VecDataset(json.loads(self.walks), self.config.window_size)
             dataloader = DataLoader(dataset, batch_size=self.config.batch_size, shuffle=True)
 
-            word2vec = Word2Vec(vocab_size=dataset.vocab_size, embedding_dim=self.config.embedding_dim)
-            criterion = nn.BCEWithLogitsLoss()
-            optimizer = optim.Adam(word2vec.parameters(), lr=self.config.learning_rate)
+            if not self.config.resumed or self.model is None:
+                self.model = Word2Vec(vocab_size=dataset.vocab_size, embedding_dim=self.config.embedding_dim)
+                self.optimizer = optim.Adam(self.model.parameters(), lr=self.config.learning_rate)
 
-            self.fit(word2vec, dataset, dataloader, criterion, optimizer)
-            embeddings = word2vec.center_embeddings.weight.data
+            criterion = nn.BCEWithLogitsLoss()
+
+            self.fit(dataset.vocab_size, dataloader, criterion)
+            embeddings = self.model.center_embeddings.weight.data
             node_embeddings = {dataset.idx_to_node[i]: embeddings[i].tolist() for i in range(dataset.vocab_size)}
             return json.dumps(node_embeddings)
 
-        def fit(self, word2vec, dataset, dataloader, criterion, optimizer):
+        def fit(self, vocab_size, dataloader, criterion):
+            if self.model is None:
+                raise ValueError("Model is not initialized.")
+
+            if self.optimizer is None:
+                raise ValueError("Optimizer is not initialized.")
+
             if self.config.steps_per_epoch is None:
                 steps_per_epoch = len(dataloader)
             else:
@@ -209,21 +226,21 @@ if using_torch:
 
                     steps += 1
                     # Negative sampling (simplified)
-                    neg_samples = torch.randint(0, dataset.vocab_size, (center_nodes.size(0), 5))
+                    neg_samples = torch.randint(0, vocab_size, (center_nodes.size(0), 5))
 
-                    optimizer.zero_grad()
+                    self.optimizer.zero_grad()
 
                     # Positive loss
-                    pos_scores = word2vec(center_nodes, context_nodes)
+                    pos_scores = self.model(center_nodes, context_nodes)
                     pos_loss = criterion(pos_scores, torch.ones_like(pos_scores))
 
                     # Negative loss
-                    neg_scores = word2vec(center_nodes.repeat(neg_samples.size(1)), neg_samples.flatten())
+                    neg_scores = self.model(center_nodes.repeat(neg_samples.size(1)), neg_samples.flatten())
                     neg_loss = criterion(neg_scores, torch.zeros_like(neg_scores))
 
                     loss = pos_loss + neg_loss
                     loss.backward()
-                    optimizer.step()
+                    self.optimizer.step()
 
                     total_loss += loss.item()
 
